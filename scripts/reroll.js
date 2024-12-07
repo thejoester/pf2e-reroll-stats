@@ -1,4 +1,6 @@
+// Log to Console
 console.log("%cPF2e ReRoll Stats || reroll.js loaded", "color: orange; font-weight: bold;");
+
 
 // Namespace for the module
 const MODULE_NAME = "pf2e-reroll-stats";
