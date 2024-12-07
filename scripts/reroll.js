@@ -298,6 +298,52 @@ async function compileActorStatsToJournal() {
 	//journalEntry.sheet.render(true);
 }
 
+// Function to delete all roll data for a selected token's actor
+function deleteActorRollData() {
+    // Get the selected tokens
+    const tokens = canvas.tokens.controlled;
+
+    // Check if any tokens are selected
+    if (tokens.length === 0) {
+        ui.notifications.warn("No tokens selected. Please select one or more tokens.");
+        return;
+    }
+
+    let deletedCount = 0;
+
+    // Loop through each selected token
+    tokens.forEach(token => {
+        const actor = token.actor;
+        if (!actor) {
+            debugLog("Token has no associated actor!", "u", 2);
+            return;
+        }
+
+        const actorId = actor.id;
+
+        // Check if roll data exists for this actor
+        if (rollDataByActor[actorId]) {
+            // Delete the roll data for the actor
+            delete rollDataByActor[actorId];
+            debugLog(`Deleted roll data for actor: ${actor.name}`);
+            deletedCount++;
+        } else {
+            debugLog(`No roll data found for actor: ${actor.name}`, "u", 2);
+        }
+    });
+
+    // Save the updated roll data persistently
+    saveRollData(); // Save Roll Data
+	compileActorStatsToJournal(); // Update Journal
+
+    // Provide feedback to the GM
+    if (deletedCount > 0) {
+        ui.notifications.info(`${deletedCount} actor(s) had their roll data deleted.`);
+    } else {
+        ui.notifications.info("No roll data found to delete for the selected actors.");
+    }
+}
+
 
 // Hook into chat messages
 Hooks.on("createChatMessage", (message) => {
@@ -312,12 +358,21 @@ Hooks.on("createChatMessage", (message) => {
     );
 
     if (isD20Roll) {
-        debugLog(`D20 roll detected! ${message}`);
+        debugLog(`D20 roll detected...`);
 
         // Access the flags or context for the PF2e system
         const context = message.getFlag("pf2e", "context");
         const actorId = context?.actor || "Unknown Actor";
+		
+		// Retrieve the actor object
+        const actor = game.actors.get(actorId);
 
+        // Ignore if the actor is not a PC
+        if (!actor || actor.type !== "character") {
+            debugLog(`Ignoring roll from non-Player Character actor: ${actor?.name || "Unknown"}`);
+            return;
+        }
+		
         // Initialize actor data if not already present
         if (!rollDataByActor[actorId]) {
             rollDataByActor[actorId] = {
