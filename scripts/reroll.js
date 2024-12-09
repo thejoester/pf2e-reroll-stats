@@ -220,85 +220,167 @@ function displayActorStatsInChat() {
     });
 }
 
-// Function to write stats to Journal
+// Function to compile actor stats into a journal entry with totals and pages
 async function compileActorStatsToJournal() {
-    const journalName = "Reroll Tracker Stats"; // Name of the journal entry
-    let journalEntry = game.journal.getName(journalName); // Check if the journal exists
+    let journalContent = "<h1>Reroll Stats</h1>";
 
-    // Compile the stats into HTML content
-    let statsContent = "<h1>Reroll Tracker Stats</h1>";
-    statsContent += "<p>Compiled stats for all actors:</p>";
-    statsContent += "<ul>";
+    // Initialize totals
+    let totalRerollCount = 0;
+    let totalBetterCount = 0;
+    let totalWorseCount = 0;
+    let totalSameCount = 0;
+    let totalSuccessCount = 0;
+    let totalCritSuccessCount = 0;
 
+    // Compile individual actor stats
     for (const [actorId, stats] of Object.entries(rollDataByActor)) {
         const actor = game.actors.get(actorId);
         if (!actor) continue;
 
-        const { rerollCount, betterCount, worseCount, sameCount, successCount, critSuccessCount } = stats;
-        const successPercentage = rerollCount > 0
-            ? ((successCount / rerollCount) * 100).toFixed(2)
-            : "N/A";
-		const critsuccessPercentage = rerollCount > 0
-            ? ((critSuccessCount / rerollCount) * 100).toFixed(2)
-            : "N/A";
-
-        statsContent += `
-            <li>
-                <h2>${actor.name}</h2>
-                <ul>
-                    <li><strong>Reroll Count:</strong> ${rerollCount}</li>
-                    <li><strong>Better Results:</strong> ${betterCount}</li>
-                    <li><strong>Worse Results:</strong> ${worseCount}</li>
-                    <li><strong>Same Results:</strong> ${sameCount}</li>
-                    <li><strong>Success Percentage:</strong> ${successPercentage}%</li>
-					<li><strong>Critcal Success Percentage:</strong> ${critsuccessPercentage}%</li>
-                </ul>
-            </li>
+        journalContent += `
+            <h2>${actor.name}</h2>
+            <ul>
+                <li><strong>Total Reroll Count:</strong> ${stats.rerollCount || 0}</li>
+                <li><strong>Total Better Results:</strong> ${stats.betterCount || 0}</li>
+                <li><strong>Total Worse Results:</strong> ${stats.worseCount || 0}</li>
+                <li><strong>Total Same Results:</strong> ${stats.sameCount || 0}</li>
+                <li><strong>Total Success Count:</strong> ${stats.successCount || 0}</li>
+                <li><strong>Total Critical Success Count:</strong> ${stats.critSuccessCount || 0}</li>
+            </ul>
         `;
+
+        // Aggregate totals
+        totalRerollCount += stats.rerollCount || 0;
+        totalBetterCount += stats.betterCount || 0;
+        totalWorseCount += stats.worseCount || 0;
+        totalSameCount += stats.sameCount || 0;
+        totalSuccessCount += stats.successCount || 0;
+        totalCritSuccessCount += stats.critSuccessCount || 0;
     }
 
-    statsContent += "</ul>";
+    // Calculate percentages
+    const successPercentage = totalRerollCount > 0
+        ? ((totalSuccessCount / totalRerollCount) * 100).toFixed(2)
+        : "N/A";
+    const critSuccessPercentage = totalRerollCount > 0
+        ? ((totalCritSuccessCount / totalRerollCount) * 100).toFixed(2)
+        : "N/A";
 
-    if (journalEntry) {
-        // If the journal entry exists, clear its pages and add new content
-        for (let page of journalEntry.pages) {
-            await page.delete(); // Delete existing pages
-        }
+    // Append totals section
+    journalContent += `
+        <h2>Total Stats</h2>
+        <ul>
+            <li><strong>Total Reroll Count:</strong> ${totalRerollCount}</li>
+            <li><strong>Total Better Results:</strong> ${totalBetterCount}</li>
+            <li><strong>Total Worse Results:</strong> ${totalWorseCount}</li>
+            <li><strong>Total Same Results:</strong> ${totalSameCount}</li>
+            <li><strong>Total Success Percentage:</strong> ${successPercentage}%</li>
+            <li><strong>Total Critical Success Percentage:</strong> ${critSuccessPercentage}%</li>
+        </ul>
+    `;
 
-        await journalEntry.createEmbeddedDocuments("JournalEntryPage", [
-            {
-                name: "Stats Overview",
-                type: "text",
-                text: {
-                    content: statsContent,
-                    format: 1, // 1 = HTML content
-                },
-            },
-        ]);
+    // Define the journal entry name
+    const journalName = "Reroll Stats";
+    let journalEntry = game.journal.getName(journalName);
 
-        debugLog(`Updated journal entry: ${journalName}`);
-    } else {
-        // Otherwise, create a new journal entry with pages
+	// Set Permissions
+	const defaultPermissions = Object.fromEntries(
+        game.users.map(user => [user.id, user.isGM ? 3 : 2]) // 3: Owner, 2: Observer
+    );
+
+
+    if (!journalEntry) {
+        // Create a new journal entry with a page
         journalEntry = await JournalEntry.create({
             name: journalName,
-            pages: [
-                {
-                    name: "Stats Overview",
-                    type: "text",
-                    text: {
-                        content: statsContent,
-                        format: 1, // 1 = HTML content
-                    },
-                },
-            ],
-            folder: null, // Change to a specific folder ID if needed
-            ownership: { default: 2 }, // 2 = OBSERVER level
+            pages: [{
+                name: "Stats",
+                type: "text",
+                text: {
+                    content: journalContent,
+                    format: 1 // HTML format
+                }
+            }],
+			ownership: defaultPermissions
         });
-
-        debugLog(`Created new journal entry: ${journalName}`);
+    } else {
+        // Update the existing journal entry's first page
+        const page = journalEntry.pages.contents[0];
+        if (page) {
+            await page.update({
+                text: {
+                    content: journalContent
+                }
+            });
+        } else {
+            // Add a new page if none exist
+            await journalEntry.createEmbeddedDocuments("JournalEntryPage", [{
+                name: "Stats",
+                type: "text",
+                text: {
+                    content: journalContent,
+                    format: 1 // HTML format
+                }
+            }]);
+        }
     }
-	//journalEntry.sheet.render(true);
+
+    // Notify the user
+    debugLog("Hero Point Reroll Stats have been compiled into a journal entry.");
 }
+
+// Function to display combined reroll stats for all actors
+function displayCombinedRerollStats() {
+    // Aggregate stats
+    let totalRerollCount = 0;
+    let totalBetterCount = 0;
+    let totalWorseCount = 0;
+    let totalSameCount = 0;
+    let totalSuccessCount = 0;
+    let totalCritSuccessCount = 0;
+
+    for (const stats of Object.values(rollDataByActor)) {
+        totalRerollCount += stats.rerollCount;
+        totalBetterCount += stats.betterCount;
+        totalWorseCount += stats.worseCount;
+        totalSameCount += stats.sameCount;
+        totalSuccessCount += stats.successCount;
+        totalCritSuccessCount += stats.critSuccessCount;
+    }
+
+    // Calculate success percentages
+    const successPercentage = totalRerollCount > 0 
+        ? ((totalSuccessCount / totalRerollCount) * 100).toFixed(2)
+        : "N/A";
+
+    const critSuccessPercentage = totalRerollCount > 0 
+        ? ((totalCritSuccessCount / totalRerollCount) * 100).toFixed(2)
+        : "N/A";
+
+    // Prepare message content
+    const messageContent = `
+        <h2>Reroll Stats totals</h2>
+        <ul>
+            <li><strong>Total Reroll Count:</strong> ${totalRerollCount}</li>
+            <li><strong>Better Results:</strong> ${totalBetterCount}</li>
+            <li><strong>Worse Results:</strong> ${totalWorseCount}</li>
+            <li><strong>Same Results:</strong> ${totalSameCount}</li>
+            <li><strong>Success Percentage:</strong> ${successPercentage}%</li>
+            <li><strong>Critical Success Percentage:</strong> ${critSuccessPercentage}%</li>
+        </ul>
+    `;
+
+    // Send the message to chat
+    ChatMessage.create({
+        user: game.user.id,
+        content: messageContent,
+        speaker: { alias: "Combined Reroll Tracker" },
+    });
+
+    // Optional: Log combined stats to the console
+    debugLog("Combined reroll stats calculated and displayed.");
+}
+
 
 // Function to delete all roll data for a selected token's actor
 function deleteActorRollData() {
