@@ -4,7 +4,7 @@ A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls.
 **Note:** The intent for this is to track Hero Point rerolls, but this will also track if a character also rerolls using the "Reroll and keep [new/lower/higher] result."
 
 ### How To Use
-The module will automatically track re-rolls made by players and add them to a Journal entry in the base journal folder named "ReRoll Tracker Stats". 
+The module will automatically track re-rolls made by players and add them to a Journal entry in the base journal folder named "ReRoll Stats". 
 
 ![Example](https://i.ibb.co/Nt0Kfg2/reroll-stats.png)
 
