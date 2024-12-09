@@ -1,5 +1,7 @@
 # pf2e-reroll-stats
-A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls
+A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls. 
+
+**Note:** The intent for this is to track Hero Point rerolls, but this will also track if a character also rerolls using the "Reroll and keep [new/lower/higher] result."
 
 ### How To Use
 The module will automatically track re-rolls made by players and add them to a Journal entry in the base journal folder named "ReRoll Tracker Stats". 
@@ -20,6 +22,12 @@ This Macro will display the selected token actor stats to the chat.
 
 Manual command:
 `displayActorStatsInChat();`
+
+### ReRoll Totals
+This Macro will display the re-roll total stats for all actors. 
+
+Manual command:
+`displayCombinedRerollStats();`
 
 ### Reset ReRoll Stats
 This Macro will CLEAR out all reroll data for the Selected Actor, setting all counts to 0.
