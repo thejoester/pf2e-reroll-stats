@@ -22,9 +22,19 @@ Hooks.once("init", () => {
         default: {},
     });
     
+	// Register settings to ignore minions
+    game.settings.register(MODULE_NAME, "ignoreMinion", {
+        name: "Ignore Minions",
+        hint: "Ignore rolls from minions (companions, summons, etc).",
+        scope: "world", 
+        config: true,  
+        type: Boolean,
+        default: true,
+	 });
+	 
     // Register settings for persistent data
     game.settings.register(MODULE_NAME, "debugEnabled", {
-        name: "Enable Debuging",
+        name: "Enable Debugging",
         hint: "enables debugging in the console for troubleshooting purposes.",
         scope: "world", // Saved at the world level
         config: true,  // Exposed in the settings menu
@@ -33,6 +43,7 @@ Hooks.once("init", () => {
     });
 	const debugEnabled = game.settings.get(MODULE_NAME, "debugEnabled");
 	console.log(`%cPF2e ReRoll Stats || Debugging: ${debugEnabled}`, "color: orange; font-weight: bold;");
+
 });
 
 Hooks.once("ready", async () => {
@@ -80,6 +91,38 @@ function debugLog(logMsg, logType = "c", logLevel = "1") {
         default:
             console.warn(`${LOG_LABEL}  Invalid log event.`);
     }
+}
+
+/**
+  Checks if an actor is valid for reroll tracking.
+ 
+  An actor is considered valid if it meets the following conditions:
+  1. The actor is of type 'character'.
+  2. Unless "Ignore Minions" is disabled in settings, ensure actor does not have the 'minion' trait in its list of traits.
+ 
+  @param {Object} actor - The actor object to check.
+  @returns {boolean} - Returns true if the actor is valid for reroll tracking, false otherwise.
+ */
+function isValidActorForRerollTracking(actor) {
+    // Check if the actor is a character
+    const isCharacter = actor.type === "character";
+
+	// Check if we are ignoring minions in settings
+	const ignoreMinion = game.settings.get(MODULE_NAME, "ignoreMinion");
+	if (!ignoreMinion) {
+		return isCharacter;
+	} else {
+	
+		// Ensure the actor has traits and check if the 'minion' trait exists
+		const traits = actor.system.traits?.value || [];
+		debugLog(`Actor Traits: ${traits}`);
+
+		const hasMinionTrait = traits.includes("minion");
+		debugLog(`Has Minion Trait: ${hasMinionTrait}`);
+		
+		// Return true if it's a character and not a minion
+		return isCharacter && !hasMinionTrait;
+	}
 }
 
 // Save rollDataByActor to settings
@@ -192,11 +235,16 @@ function displayActorStatsInChat() {
     }
 
     // Calculate success percentage based on reroll outcomes
-    const { rerollCount, betterCount, worseCount, sameCount } = actorData;
-    const successPercentage = rerollCount > 0 
-        ? ((betterCount / rerollCount) * 100).toFixed(2)
-        : "N/A";
-
+    const { rerollCount, betterCount, worseCount, sameCount, successCount, critSuccessCount } = actorData;
+    
+	// Calculate the success percentage based on the successCount and rerollCount
+	const successPercentage = (
+		(actorData.successCount / actorData.rerollCount) * 100
+	).toFixed(2);
+	const critsuccessPercentage = (
+		(actorData.critSuccessCount / actorData.rerollCount) * 100
+	).toFixed(2);
+	
 	// Prepare the chat message content
     const messageContent = `
         <h2>Reroll Stats for ${actorName}</h2>
@@ -205,6 +253,8 @@ function displayActorStatsInChat() {
             <li><strong>Better Results:</strong> ${betterCount}</li>
             <li><strong>Worse Results:</strong> ${worseCount}</li>
             <li><strong>Same Results:</strong> ${sameCount}</li>
+			<li><strong>Reroll Sucess:</strong> ${successCount}</li>
+			<li><strong>Reroll Crit:</strong> ${critSuccessCount}</li>
             <li><strong>Success Percentage:</strong> ${successPercentage}%</li>
             <li><strong>Crit Success Percentage:</strong> ${successPercentage}%</li>
         </ul>
@@ -231,11 +281,21 @@ async function compileActorStatsToJournal() {
     let totalSameCount = 0;
     let totalSuccessCount = 0;
     let totalCritSuccessCount = 0;
+	let actorsuccessPercentage = 0;
+	let actorcritsuccessPercentage = 0;
 
     // Compile individual actor stats
     for (const [actorId, stats] of Object.entries(rollDataByActor)) {
         const actor = game.actors.get(actorId);
         if (!actor) continue;
+
+		// Calculate the success percentage based on the successCount and rerollCount
+		actorsuccessPercentage = (
+			(stats.successCount / stats.rerollCount) * 100
+		).toFixed(2);
+		actorcritsuccessPercentage = (
+			(stats.critSuccessCount / stats.rerollCount) * 100
+		).toFixed(2);
 
         journalContent += `
             <h2>${actor.name}</h2>
@@ -246,6 +306,8 @@ async function compileActorStatsToJournal() {
                 <li><strong>Total Same Results:</strong> ${stats.sameCount || 0}</li>
                 <li><strong>Total Success Count:</strong> ${stats.successCount || 0}</li>
                 <li><strong>Total Critical Success Count:</strong> ${stats.critSuccessCount || 0}</li>
+				<li><strong>Success Percentage:</strong> ${actorsuccessPercentage}%</li>
+				<li><strong>Crit Success Percentage:</strong> ${actorcritsuccessPercentage}%</li>
             </ul>
         `;
 
@@ -381,7 +443,6 @@ function displayCombinedRerollStats() {
     debugLog("Combined reroll stats calculated and displayed.");
 }
 
-
 // Function to delete all roll data for a selected token's actor
 function deleteActorRollData() {
     // Get the selected tokens
@@ -428,6 +489,50 @@ function deleteActorRollData() {
     }
 }
 
+// Function to delete all reroll data - optional to delete journal also
+function deleteAllRerollStats(deleteJournal = false) {
+    // Confirm before proceeding
+    new Dialog({
+        title: "Delete All Reroll Stats",
+        content: `
+            <p>Are you sure you want to delete all Hero Point reroll stats?</p>
+            ${deleteJournal ? "<p>The associated journal entry will also be deleted.</p>" : ""}
+        `,
+        buttons: {
+            yes: {
+                icon: '<i class="fas fa-trash"></i>',
+                label: "Yes",
+                callback: async () => {
+                    // Clear the roll data
+                    rollDataByActor = {};
+                    debugLog("All Hero Point reroll stats have been cleared.", "c", 2);
+
+                    // Optionally delete the journal entry
+                    if (deleteJournal) {
+                        const journalName = "Reroll Stats";
+                        const journalEntry = game.journal.getName(journalName);
+                        if (journalEntry) {
+                            await journalEntry.delete();
+                            debugLog(`Journal entry "${journalName}" has been deleted.`, "c", 2);
+                        } else {
+                            debugLog(`Journal entry "${journalName}" not found.`, "c", 2);
+                        }
+                    }
+
+                    // Notify the user
+                    debugLog("All Hero Point reroll stats have been deleted.");
+                }
+            },
+            no: {
+                icon: '<i class="fas fa-times"></i>',
+                label: "No",
+                callback: () => debugLog("Delete action cancelled.")
+            }
+        },
+        default: "no"
+    }).render(true);
+}
+
 
 // Hook into chat messages
 Hooks.on("createChatMessage", (message) => {
@@ -451,9 +556,9 @@ Hooks.on("createChatMessage", (message) => {
 		// Retrieve the actor object
         const actor = game.actors.get(actorId);
 
-        // Ignore if the actor is not a PC
-        if (!actor || actor.type !== "character") {
-            debugLog(`Ignoring roll from non-Player Character actor: ${actor?.name || "Unknown"}`);
+        // Check if actor is valid character
+        if (!isValidActorForRerollTracking(actor)) {
+            debugLog(`Ignoring roll from non-Player Character or minion actor: ${actor?.name || "Unknown"}`,"c",2);
             return;
         }
 		

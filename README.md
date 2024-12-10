@@ -45,3 +45,13 @@ This macro will DELETE all re-roll data for selected token actor! If you want to
 Manual command:
 `deleteActorRollData();`
 
+### Delete ALL Reroll Stats
+
+This macro will DELETE ALL REROLL DATA FOR ALL ACTORS 
+
+If you want to just reset all stats to 0, then usee the Reset macro instead. 
+
+!!! CAN NOT BE UNDONE !!!
+
+Manual command: 
+`deleteAllRerollStats();`
