@@ -30,6 +30,14 @@ This Macro will display the re-roll total stats for all actors.
 Manual command:
 `displayCombinedRerollStats();`
 
+### Reroll Editor
+This macro will open up a window that allows you to select an actor and edit the reroll data. (GM Only)
+
+![reroll editor](https://i.ibb.co/DCW0hnQ/Reroll-Data.png)
+
+manual command:
+`openRerollEditor();`
+
 ### Reset ReRoll Stats
 This Macro will CLEAR out all reroll data for the Selected Actor, setting all counts to 0.
 
