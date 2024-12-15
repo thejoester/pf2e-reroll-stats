@@ -1,4 +1,4 @@
-# pf2e-reroll-stats
+# P2Fe Reroll Stats
 A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls. 
 
 **Note:** The intent for this is to track Hero Point rerolls, but this will also track if a character also rerolls using the "Reroll and keep [new/lower/higher] result."
