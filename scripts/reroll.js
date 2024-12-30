@@ -31,7 +31,7 @@ Hooks.once("init", () => {
         type: Boolean,
         default: false,
 		onChange: (value) => {
-            debugLog(`PF2E Reroll Stats | outputToChat: ${value}`);
+            debugLog(`PF2E Reroll Stats | Setting outputToChat: ${value}`);
         },
 		requiresReload: true
 	 });
@@ -66,48 +66,83 @@ Hooks.once("init", () => {
 Hooks.once("ready", async () => {
     // Initialize rollDataByActor from game settings or as an empty object
     rollDataByActor = game.settings.get(MODULE_NAME, "rollData") || {};
-
     console.log(`%c${LOG_LABEL} Reroll Tracker ready!`, "color: Orange; font-weight: bold;");
 });
 
 // Function for debugging
-function debugLog(logMsg, logType = "c", logLevel = "1") {
-    const debugEnabled = game.settings.get(MODULE_NAME, "debugEnabled");
-    if (!debugEnabled && logLevel != 3) return;
-    switch (logType) {
-        case "c": // console
-            switch (logLevel) {
-                case "1": // info/log
-                    console.log(`%c${LOG_LABEL}  ${logMsg}`, "color: orange; font-weight: bold;");
-                    break;
-                case "2": // warn
-                    console.warn(`${LOG_LABEL}  ${logMsg}`);
-                    break;
-                case "3": // error
-                    console.error(`${LOG_LABEL}  ${logMsg}`);
-                    break;
-                default:
-                    console.log(`%c${LOG_LABEL}  ${logMsg}`, "color: orange; font-weight: bold;");
-            }
-            break;
-        case "u": // ui
-            switch (logLevel) {
-                case "1": // info/log
-                    ui.notifications.info(`${LOG_LABEL}  ${logMsg}`);
-                    break;
-                case "2": // warn
-                    ui.notifications.warn(`${LOG_LABEL}  ${logMsg}`);
-                    break;
-                case "3": // error
-                    ui.notifications.error(`${LOG_LABEL}  ${logMsg}`);
-                    break;
-                default:
-                    ui.notifications.info(logMsg);
-            }
-            break;
-        default:
-            console.warn(`${LOG_LABEL}  Invalid log event.`);
-    }
+export function debugLog(intLogType, stringLogMsg, objObject = null) {
+	// Handle the case where the first argument is a string
+	if (typeof intLogType === "string") {
+		objObject = stringLogMsg; // Shift arguments
+		stringLogMsg = intLogType;
+		intLogType = 1; // Default log type to 'all'
+	}
+
+	const debugLevel = game.settings.get("pf2e-alchemist-remaster-ducttape", "debugLevel");
+
+	// Map debugLevel setting to numeric value for comparison
+	const levelMap = {
+		"none": 0,
+		"error": 3,
+		"warn": 2,
+		"all": 1
+	};
+
+	const currentLevel = levelMap[debugLevel] || 0; // Default to 'none' if debugLevel is undefined
+
+	// Check if the log type should be logged based on the current debug level
+	if (intLogType < currentLevel) return;
+
+	// Capture stack trace to get file and line number
+	const stack = new Error().stack.split("\n");
+	let fileInfo = "Unknown Source";
+	for (let i = 2; i < stack.length; i++) {
+		const line = stack[i].trim();
+		const fileInfoMatch = line.match(/(\/[^)]+):(\d+):(\d+)/); // Match file path and line number
+		if (fileInfoMatch) {
+			const [, filePath, lineNumber] = fileInfoMatch;
+			const fileName = filePath.split("/").pop(); // Extract just the file name
+			// Ensure the file is one of the allowed files
+			const allowedFiles = ["FormulaSearch.js", "LevelUp.js", "PowerfulAlchemy.js", "QuickAlchemy.js", "settings.js", "VialSearch.js"];
+			if (allowedFiles.includes(fileName)) {
+				fileInfo = `${fileName}:${lineNumber}`;
+				break;
+			}
+		}
+	}
+
+	// Prepend the file and line info to the log message
+	const formattedLogMsg = `[${fileInfo}] ${stringLogMsg}`;
+	
+	if (objObject) {
+		switch (intLogType) {
+			case 1: // Info/Log (all)
+				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;", objObject);
+				break;
+			case 2: // Warning
+				console.log(`%c${LOG_LABEL} | WARNING: ${formattedLogMsg}`, "color: yellow; font-weight: bold;", objObject);
+				break;
+			case 3: // Critical/Error
+				console.log(`%c${LOG_LABEL} | ERROR: ${formattedLogMsg}`, "color: red; font-weight: bold;", objObject);
+				break;
+			default:
+				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;", objObject);
+		}
+	} else {
+		switch (intLogType) {
+			case 1: // Info/Log (all)
+				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;");
+				break;
+			case 2: // Warning
+				console.log(`%c${LOG_LABEL} | WARNING: ${formattedLogMsg}`, "color: yellow; font-weight: bold;");
+				break;
+			case 3: // Critical/Error
+				console.log(`%c${LOG_LABEL} | ERROR: ${formattedLogMsg}`, "color: red; font-weight: bold;");
+				break;
+			default:
+				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;");
+		}
+	}
 }
 
 /**
@@ -132,7 +167,7 @@ function isValidActorForRerollTracking(actor) {
 	
 		// Ensure the actor has traits and check if the 'minion' trait exists
 		const traits = actor.system.traits?.value || [];
-		debugLog(`Actor Traits: ${traits}`);
+		debugLog(`Actor Traits: `, traits);
 
 		const hasMinionTrait = traits.includes("minion");
 		debugLog(`Has Minion Trait: ${hasMinionTrait}`);
@@ -195,15 +230,16 @@ function resetRerollStats() {
     tokens.forEach(token => {
         const actor = token.actor;
         if (!actor) {
+			debugLog(2, "Token has no associated actor!");
             return; // Skip if the token has no associated actor
-            debugLog("Token has no associated actor!");
+            
         }
 
         const actorId = actor.id;
 
         // Check if actor data exists in rollDataByActor
         if (!rollDataByActor[actorId]) {
-            debugLog(`No reroll data found for actor: ${actor.name}`, "u", 2);
+            ui.notifications.warn(`No reroll data found for actor: ${actor.name}`);
             return;
         }
 
@@ -404,7 +440,6 @@ async function compileActorStatsToJournal() {
         }
     }
 
-    // Notify the user
     debugLog("Hero Point Reroll Stats have been compiled into a journal entry.");
 }
 
@@ -455,8 +490,6 @@ function displayCombinedRerollStats() {
         content: messageContent,
         speaker: { alias: "Combined Reroll Tracker" },
     });
-
-    // Optional: Log combined stats to the console
     debugLog("Combined reroll stats calculated and displayed.");
 }
 
@@ -477,7 +510,7 @@ function deleteActorRollData() {
     tokens.forEach(token => {
         const actor = token.actor;
         if (!actor) {
-            debugLog("Token has no associated actor!", "u", 2);
+            ui.notifications.warn("Token has no associated actor!");
             return;
         }
 
@@ -487,10 +520,10 @@ function deleteActorRollData() {
         if (rollDataByActor[actorId]) {
             // Delete the roll data for the actor
             delete rollDataByActor[actorId];
-            debugLog(`Deleted roll data for actor: ${actor.name}`);
+            debugLog(`Deleted roll data for ${actor.name}`);
             deletedCount++;
         } else {
-            debugLog(`No roll data found for actor: ${actor.name}`, "u", 2);
+            ui.notifications.warn(`No roll data found for actor: ${actor.name}`);
         }
     });
 
@@ -522,7 +555,7 @@ function deleteAllRerollStats(deleteJournal = false) {
                 callback: async () => {
                     // Clear the roll data
                     rollDataByActor = {};
-                    debugLog("All Hero Point reroll stats have been cleared.", "c", 2);
+                    debugLog(2, "All Hero Point reroll stats have been cleared.");
 
                     // Optionally delete the journal entry
                     if (deleteJournal) {
@@ -530,9 +563,9 @@ function deleteAllRerollStats(deleteJournal = false) {
                         const journalEntry = game.journal.getName(journalName);
                         if (journalEntry) {
                             await journalEntry.delete();
-                            debugLog(`Journal entry "${journalName}" has been deleted.`, "c", 2);
+                            debugLog(2, `Journal entry "${journalName}" has been deleted.`);
                         } else {
-                            debugLog(`Journal entry "${journalName}" not found.`, "c", 2);
+                            debugLog(2, `Journal entry "${journalName}" not found.`);
                         }
                     }
 					saveRollData();
@@ -731,11 +764,10 @@ Hooks.on("createChatMessage", async (message) => {
     );
 
     if (!isD20Roll) {
-        debugLog("Not a d20 roll.");
         return;
     }
 
-    debugLog(`D20 roll detected...`);
+    debugLog(`D20 roll detected!`);
 
     // Access the flags or context for the PF2e system
     const context = message.getFlag("pf2e", "context") || {};
@@ -744,13 +776,13 @@ Hooks.on("createChatMessage", async (message) => {
     // Retrieve the actor object
     const actor = game.actors.get(actorId);
     if (!actor) {
-        debugLog(`No actor found for actorId: ${actorId}`, "c", 2);
+        debugLog(2, `No actor found for actorId: ${actorId}`);
         return;
     }
 
     // Check if actor is valid character
     if (!isValidActorForRerollTracking(actor)) {
-        debugLog(`Ignoring roll from non-Player Character or minion actor: ${actor.name || "Unknown"}`, "c", 2);
+        debugLog(2, `Ignoring roll from non-Player Character or minion actor: ${actor.name || "Unknown"}`);
         return;
     }
 
@@ -821,7 +853,7 @@ Hooks.on("createChatMessage", async (message) => {
             debugLog(`Actor ${actorId}'s success percentage: ${successPercentage}%`);
             debugLog(`Actor ${actorId}'s critical success percentage: ${critsuccessPercentage}%`);
         } else {
-            debugLog(`No original roll found for actor ${actorId}.`);
+            debugLog(2,`No original roll found for actor ${actorId}.`);
         }
 		
 		// Save RollData
@@ -829,7 +861,7 @@ Hooks.on("createChatMessage", async (message) => {
 		
 		// Output to chat if enabled in settings
 		const outputToChat = game.settings.get(MODULE_NAME, "outputToChat");
-		debugLog(`outputToChat: ${outputToChat} | Actor Name: ${actor.name}`);
+		debugLog(`Setting: outputToChat: ${outputToChat} | Actor Name: ${actor.name}`);
 		if (outputToChat) {
 			const messageContent = `
 				<h2>Reroll Stats for ${actor.name}</h2>
@@ -867,53 +899,6 @@ Hooks.on("createChatMessage", async (message) => {
     
 });
 
-
-/**
- * Hook: updateChatMessage
- * 
- * Description:
- * This hook listens for updates to chat messages in Foundry VTT. It specifically looks for "saves" data provided 
- * by the **pf2e-toolbelt** module under `flags.pf2e-toolbelt.targetHelper.saves`. The primary goal is to track 
- * reroll data for saving throws made by actors in the game, similar to how rerolls are tracked for other chat messages.
- * 
- * Functionality:
- * - **Token Lookup**: Finds the token on the canvas using `canvas.tokens.placeables`, ensuring both linked and unlinked 
- *   tokens are accounted for.
- * - **Actor Verification**: Confirms the actor associated with the token is valid for reroll tracking, ensuring minions, 
- *   NPCs, or invalid actors are excluded.
- * - **Roll Parsing**: Parses the save roll from the JSON string to extract total roll value, die value, reroll status, 
- *   and the degree of success.
- * - **Data Handling**: Tracks the reroll logic and calculates better, worse, or same roll outcomes for each actor. 
- *   Updates persistent roll tracking data for each actor.
- * - **Logging**: Uses `debugLog` to output key details about token lookups, actor validation, roll outcomes, 
- *   and reroll performance.
- * 
- * Key Variables:
- * - **message**: The chat message object that was updated.
- * - **updateData**: The data that was used to update the message.
- * - **options**: Options related to the update.
- * - **userId**: The ID of the user who made the update.
- * 
- * Example Log Messages:
- * ```
- * Detected saves in pf2e-toolbelt targetHelper
- * Processing save for tokenId: kJMtxiKsaRZ8E9o7
- * Token ID: kJMtxiKsaRZ8E9o7 | Roll Total: 29 | Die: 17 | Outcome: success | Degree of Success: 2 | Is Reroll: false
- * Original roll saved for actor: Pestilence
- * ```
- * 
- * Important Notes:
- * - **Token Resolution**: Tokens are resolved using `canvas.tokens.placeables` instead of `game.actors.tokens`, 
- *   as the latter only tracks linked tokens.
- * - **Actor Validation**: Uses the `isValidActorForRerollTracking` function to ensure the actor is a valid PC and 
- *   not a minion or temporary entity.
- * - **Data Persistence**: Calls `saveRollData()` to store all roll tracking information to game settings.
- * 
- * @param {ChatMessage} message - The updated chat message object.
- * @param {Object} updateData - The data used to update the message.
- * @param {Object} options - Additional options related to the update.
- * @param {string} userId - The ID of the user who made the update.
- */
 Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
     
     // Check if "pf2e-toolbelt" is active - otherwise exit hook
@@ -930,22 +915,22 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
     const saves = message.flags?.["pf2e-toolbelt"]?.targetHelper?.saves;
     if (!saves) return;
 
-    debugLog("Detected saves in pf2e-toolbelt targetHelper", "c", 1);
+    debugLog("Detected saves in pf2e-toolbelt targetHelper");
 
     // Loop through each save in the targetHelper saves
     for (const [tokenId, saveData] of Object.entries(saves)) {
-        debugLog(`Processing save for tokenId: ${tokenId}`, "c", 1);
+        debugLog(`Processing save for tokenId: ${tokenId}`);
 
         // Locate the token on the canvas
         const token = canvas.tokens.placeables.find(t => t.id === tokenId);
         if (!token) {
-            debugLog(`No token found for tokenId: ${tokenId}`, "c", 2);
+            debugLog(2, `No token found for tokenId: ${tokenId}`);
             continue;
         }
 
         const actor = token.actor;
         if (!actor) {
-            debugLog(`No actor found for tokenId: ${tokenId}`, "c", 2);
+            debugLog(2, `No actor found for tokenId: ${tokenId}`);
             continue;
         }
 
@@ -954,7 +939,7 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
         try {
             rollData = JSON.parse(saveData.roll);
         } catch (error) {
-            debugLog(`Failed to parse roll data for tokenId: ${tokenId}`, "c", 3);
+            debugLog(3, `Failed to parse roll data for tokenId: ${tokenId}`);
             continue;
         }
 
@@ -965,18 +950,14 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
         const isReroll = rollData?.options?.isReroll ?? false;
         const outcome = saveData.success || "unknown";
 
-        debugLog(
-            `Token ID: ${tokenId} | Roll Total: ${rollTotal} | Die: ${rollDie} | Outcome: ${outcome} | Is Reroll: ${isReroll}`,
-            "c",
-            1
-        );
+        debugLog(`Token ID: ${tokenId} | Roll Total: ${rollTotal} | Die: ${rollDie} | Outcome: ${outcome} | Is Reroll: ${isReroll}`);
 
         // Process the roll for reroll tracking (similar to the logic in createChatMessage hook)
         const actorId = actor.id;
 
         // Check if actor is valid character
         if (!isValidActorForRerollTracking(actor)) {
-            debugLog(`Ignoring roll from non-Player Character or minion actor: ${actor?.name || "Unknown"}`, "c", 2);
+            debugLog(2, `Ignoring roll from non-Player Character or minion actor: ${actor?.name || "Unknown"}`);
             continue;
         }
 
@@ -1008,7 +989,7 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
 		
         // Check if it is a reroll
         if (isReroll) {
-            debugLog("ReRoll detected from targetHelper save!", "c", 1);
+            debugLog("ReRoll detected from targetHelper save!");
 
             // Compare the reroll with the original roll to determine if it's better or worse
             const rerollResult = rollTotal;
