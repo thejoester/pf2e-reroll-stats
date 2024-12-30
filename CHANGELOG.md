@@ -1,3 +1,6 @@
+## 1.2.2
+- fixed bug with debugging.
+
 ## 1.2.1
 - Updated debugging 
 
