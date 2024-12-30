@@ -70,7 +70,7 @@ Hooks.once("ready", async () => {
 });
 
 // Function for debugging
-export function debugLog(intLogType, stringLogMsg, objObject = null) {
+function debugLog(intLogType, stringLogMsg, objObject = null) {
 	// Handle the case where the first argument is a string
 	if (typeof intLogType === "string") {
 		objObject = stringLogMsg; // Shift arguments
