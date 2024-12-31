@@ -47,19 +47,23 @@ Hooks.once("init", () => {
 	 });
 	 
     // Register settings for persistent data
-    game.settings.register(MODULE_NAME, "debugEnabled", {
-        name: "Enable Debugging",
-        hint: "enables debugging in the console for troubleshooting purposes.",
-        scope: "world", // Saved at the world level
-        config: true,  // Exposed in the settings menu
-        type: Boolean,  // Corrected from `boolean` to `Boolean`
-        default: false,
-		onChange: (value) => {
-            debugLog(`PF2E Reroll Stats | debugEnabled: ${value}`);
-        }
-    });
-	const debugEnabled = game.settings.get(MODULE_NAME, "debugEnabled");
-	console.log(`%cPF2e ReRoll Stats || Debugging: ${debugEnabled}`, "color: orange; font-weight: bold;");
+    game.settings.register(MODULE_NAME, "debugLevel", {
+        name: "Debug Level",
+		hint: "Set the debug level for logging. None disables all logging, All includes info, warnings, and errors.",
+		scope: "world",
+		config: true,
+		type: String,
+		choices: {
+			"none": "None",
+			"error": "Errors",
+			"warn": "Warnings",
+			"all": "All"
+		},
+		default: "none", // Default to no logging
+		requiresReload: true
+	});
+	const debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
+	console.log(`%cPF2e ReRoll Stats || Debugging: ${debugLevel}`, "color: orange; font-weight: bold;");
 
 });
 
@@ -78,7 +82,7 @@ function debugLog(intLogType, stringLogMsg, objObject = null) {
 		intLogType = 1; // Default log type to 'all'
 	}
 
-	const debugLevel = game.settings.get("pf2e-alchemist-remaster-ducttape", "debugLevel");
+	const debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
 
 	// Map debugLevel setting to numeric value for comparison
 	const levelMap = {
