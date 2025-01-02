@@ -1,3 +1,6 @@
+## 1.2.5
+- Changed Success count and percentage to display regular success and critical success combined as crit is also a "success".
+
 ## 1.2.4
 - Cleaned up stat presentation so all stats exept total show a percentage in parenthesis.
 
