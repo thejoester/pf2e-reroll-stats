@@ -1,3 +1,6 @@
+## 1.2.4
+- Cleaned up stat presentation so all stats exept total show a percentage in parenthesis.
+
 ## 1.2.2
 - fixed bug with debugging.
 
