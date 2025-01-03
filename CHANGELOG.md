@@ -1,4 +1,4 @@
-## 1.2.5
+## 1.2.51
 - Fixed calculation error when outputting to chat after reroll. 
 
 ## 1.2.5
