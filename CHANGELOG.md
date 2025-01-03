@@ -1,4 +1,7 @@
 ## 1.2.5
+- Fixed calculation error when outputting to chat after reroll. 
+
+## 1.2.5
 - Changed Success count and percentage to display regular success and critical success combined as crit is also a "success".
 
 ## 1.2.4

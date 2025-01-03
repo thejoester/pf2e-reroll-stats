@@ -298,7 +298,7 @@ function displayActorStatsInChat() {
 	const actorSamePct = Math.round((actorData.sameCount / actorData.rerollCount) * 100);
 	const actorSuccessPct = Math.round((actorData.successCount / actorData.rerollCount) * 100);
 	const actorCritPct = Math.round((actorData.critSuccessCount / actorData.rerollCount) * 100);	
-	const successPct = Math.round((actorData.successCount + actorData.critSuccessCount / actorData.rerollCount) * 100);
+	const successPct = Math.round(((actorData.successCount + actorData.critSuccessCount) / actorData.rerollCount) * 100);
 	const critPct = Math.round((actorData.critSuccessCount / actorData.rerollCount) * 100);
 	
 	// Prepare the chat message content
@@ -309,7 +309,7 @@ function displayActorStatsInChat() {
             <li><strong>Better Results:</strong> ${betterCount} (${actorBetterPct}%)</li>
             <li><strong>Worse Results:</strong> ${worseCount} (${actorWorsePct}%)</li>
             <li><strong>Same Results:</strong> ${sameCount} (${actorSamePct}%)</li>
-			<li><strong>Reroll Sucess:</strong> ${successCount} (${successPct}%)</li>
+			<li><strong>Reroll Sucess:</strong> ${successCount + critSuccessCount} (${successPct}%)</li>
 			<li><strong>Reroll Crit:</strong> ${critSuccessCount} (${critPct}%)</li>
         </ul>
     `;
@@ -350,7 +350,7 @@ async function compileActorStatsToJournal() {
 		actorBetterPct = Math.round((stats.betterCount / stats.rerollCount) * 100);
 		actorWorsePct = Math.round((stats.worseCount / stats.rerollCount) * 100);
 		actorSamePct = Math.round((stats.sameCount / stats.rerollCount) * 100);
-		actorSuccessPct = Math.round((stats.successCount + stats.critSuccessCount / stats.rerollCount) * 100);
+		actorSuccessPct = Math.round(((stats.successCount + stats.critSuccessCount) / stats.rerollCount) * 100);
 		actorCritPct = Math.round((stats.critSuccessCount / stats.rerollCount) * 100);
 
         journalContent += `
@@ -360,7 +360,7 @@ async function compileActorStatsToJournal() {
 				<li><strong>Total Better Results:</strong> ${stats.betterCount || 0} (${actorBetterPct}%)</li>
                 <li><strong>Total Worse Results:</strong> ${stats.worseCount || 0} (${actorWorsePct}%)</li>
                 <li><strong>Total Same Results:</strong> ${stats.sameCount || 0} (${actorSamePct}%)</li>
-                <li><strong>Total Success Count:</strong> ${stats.successCount || 0} (${actorSuccessPct}%)</li>
+                <li><strong>Total Success Count:</strong> ${stats.successCount + stats.critSuccessCount || 0} (${actorSuccessPct}%)</li>
                 <li><strong>Total Critical Success Count:</strong> ${stats.critSuccessCount || 0} (${actorCritPct}%)</li>
             </ul>
         `;
@@ -465,7 +465,7 @@ function displayCombinedRerollStats() {
 	const totalBetterPct = totalRerollCount > 0 ? Math.round((totalBetterCount / totalRerollCount) * 100) : "N/A";
 	const totalWorsePct = totalRerollCount > 0 ? Math.round((totalWorseCount / totalRerollCount) * 100) : "N/A";
 	const totalSamePct = totalRerollCount > 0 ? Math.round((totalSameCount / totalRerollCount) * 100) : "N/A";
-	const totalSuccessPct = totalRerollCount > 0 ? Math.round((totalSuccessCount + totalCritSuccessCount / totalRerollCount) * 100) : "N/A";
+	const totalSuccessPct = totalRerollCount > 0 ? Math.round(((totalSuccessCount + totalCritSuccessCount) / totalRerollCount) * 100) : "N/A";
 	const totalCritPct = totalRerollCount > 0 ? Math.round((totalCritSuccessCount / totalRerollCount) * 100) : "N/A";	
 
 
@@ -477,7 +477,7 @@ function displayCombinedRerollStats() {
 <li><strong>Better Results:</strong> ${totalBetterCount} (${totalBetterPct})%</li>
             <li><strong>Worse Results:</strong> ${totalWorseCount} (${totalWorsePct})%</li>
             <li><strong>Same Results:</strong> ${totalSameCount} (${totalSamePct})%</li>
-            <li><strong>Success Percentage:</strong> ${totalSuccessCount} (${totalSuccessPct})%</li>
+            <li><strong>Success Percentage:</strong> ${totalSuccessCount + totalCritSuccessCount} (${totalSuccessPct})%</li>
             <li><strong>Critical Success Percentage:</strong> ${totalCritSuccessCount} (${totalCritPct})%</li>
         </ul>
     `;
@@ -835,7 +835,7 @@ Hooks.on("createChatMessage", async (message) => {
 		actorSamePct = Math.round((actorData.sameCount / actorData.rerollCount) * 100);
 		actorSuccessPct = Math.round((actorData.successCount / actorData.rerollCount) * 100);
 		actorCritPct = Math.round((actorData.critSuccessCount / actorData.rerollCount) * 100);	
-		successPct = Math.round((actorData.successCount + actorData.critSuccessCount / actorData.rerollCount) * 100);
+		successPct = Math.round(((actorData.successCount + actorData.critSuccessCount) / actorData.rerollCount) * 100);
 		critPct = Math.round((actorData.critSuccessCount / actorData.rerollCount) * 100);
 		
 		// Save RollData
@@ -854,25 +854,11 @@ Hooks.on("createChatMessage", async (message) => {
 					<li><strong>Better Results:</strong> ${actorData.betterCount} (${actorBetterPct}%)</li>
 					<li><strong>Worse Results:</strong> ${actorData.worseCount} (${actorWorsePct}%)</li>
 					<li><strong>Same Results:</strong> ${actorData.sameCount} (${actorSamePct}%)</li>
-					<li><strong>Reroll Sucess:</strong> ${actorData.successCount} (${successPct}%)</li>
+					<li><strong>Reroll Sucess:</strong> ${actorData.successCount + actorData.critSuccessCount} (${successPct}%)</li>
 					<li><strong>Reroll Crit:</strong> ${actorData.critSuccessCount} (${critPct}%)</li>
 				</ul>
 			`;
-			/*
-			const messageContent = `
-				<h2>Reroll Stats for ${actor.name}</h2>
-				<ul>
-					<li><strong>Reroll Count:</strong> ${actorData.rerollCount}</li>
-					<li><strong>Better Results:</strong> ${actorData.betterCount}</li>
-					<li><strong>Worse Results:</strong> ${actorData.worseCount}</li>
-					<li><strong>Same Results:</strong> ${actorData.sameCount}</li>
-					<li><strong>Reroll Success:</strong> ${actorData.successCount}</li>
-					<li><strong>Reroll Crit:</strong> ${actorData.critSuccessCount}</li>
-					<li><strong>Success Percentage:</strong> ${successPercentage}%</li>
-					<li><strong>Crit Success Percentage:</strong> ${critsuccessPercentage}%</li>
-				</ul>
-			`;
-			*/
+			
 			// Send the message to chat
 			ChatMessage.create({
 				user: game.user.id,
@@ -1023,7 +1009,7 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
 				actorSamePct = Math.round((actorData.sameCount / actorData.rerollCount) * 100);
 				actorSuccessPct = Math.round((actorData.successCount / actorData.rerollCount) * 100);
 				actorCritPct = Math.round((actorData.critSuccessCount / actorData.rerollCount) * 100);	
-				successPct = Math.round((actorData.successCount + actorData.critSuccessCount / actorData.rerollCount) * 100);
+				successPct = Math.round(((actorData.successCount + actorData.critSuccessCount) / actorData.rerollCount) * 100);
 				critPct = Math.round((actorData.critSuccessCount / actorData.rerollCount) * 100);
             } else {
                 // No original roll
@@ -1043,7 +1029,7 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
 						<li><strong>Better Results:</strong> ${betterCount} (${actorBetterPct}%)</li>
 						<li><strong>Worse Results:</strong> ${worseCount} (${actorWorsePct}%)</li>
 						<li><strong>Same Results:</strong> ${sameCount} (${actorSamePct}%)</li>
-						<li><strong>Reroll Sucess:</strong> ${successCount} (${successPct}%)</li>
+						<li><strong>Reroll Sucess:</strong> ${successCount + critSuccessCount} (${successPct}%)</li>
 						<li><strong>Reroll Crit:</strong> ${critSuccessCount} (${critPct}%)</li>
 					</ul>
 				`;
