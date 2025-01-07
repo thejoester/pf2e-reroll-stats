@@ -1,3 +1,6 @@
+## 1.2.52
+- Fixed typos in settings.
+
 ## 1.2.51
 - Fixed calculation error when outputting to chat after reroll. 
 

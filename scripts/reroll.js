@@ -24,8 +24,8 @@ Hooks.once("init", () => {
     
 	// Register settings to output to chat after a reroll
     game.settings.register(MODULE_NAME, "outputToChat", {
-        name: "Output sctor stats to chat after reroll?",
-        hint: "Will output an actor's reroll stats in chat after each reroll/",
+        name: "Output actor stats to chat after reroll?",
+        hint: "Will output an actor's reroll stats in chat after each reroll.",
         scope: "world", 
         config: true,  
         type: Boolean,
