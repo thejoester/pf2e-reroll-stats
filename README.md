@@ -6,8 +6,7 @@ A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls.
 ### How To Use
 The module will automatically track re-rolls made by players and add them to a Journal entry in the base journal folder named "ReRoll Stats". 
 
-![Example](https://i.ibb.co/NWXjMJq/reroll-stats.png)
-
+![image](https://github.com/user-attachments/assets/befcc8a4-4529-4af9-8cd0-4955bdaefc67)
 
 ## Macros
 The following Macros are in the "ReRoll Stats Macros" Compendium:
@@ -37,14 +36,6 @@ This macro will open up a window that allows you to select an actor and edit the
 
 manual command:
 `openRerollEditor();`
-
-### Reset ReRoll Stats
-This Macro will CLEAR out all reroll data for the Selected Actor, setting all counts to 0.
-
-***!!! CAN NOT BE UNDONE !!!***
-
-Manual Command:
-`resetRerollStats();`
 
 ### Delete Selected ReRoll Data
 This macro will DELETE all re-roll data for selected token actor! If you want to just reset all stats to 0, then usee the Reset macro instead. 
