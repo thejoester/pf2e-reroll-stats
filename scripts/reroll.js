@@ -1,7 +1,6 @@
 // Log to Console
 console.log("%cPF2e ReRoll Stats || reroll.js loaded", "color: orange; font-weight: bold;");
 
-
 // Namespace for the module
 const MODULE_NAME = "pf2e-reroll-stats";
 
@@ -72,6 +71,31 @@ Hooks.once("ready", async () => {
     rollDataByActor = game.settings.get(MODULE_NAME, "rollData") || {};
     console.log(`%c${LOG_LABEL} Reroll Tracker ready!`, "color: Orange; font-weight: bold;");
 });
+
+/*
+	Displays a confirmation dialog with a custom message.
+	*Requires message, example: "This will delete all data." 
+	*returns {Promise<boolean>} - Resolves to `true` if the user confirms, `false` otherwise.
+ */
+async function showConfirmationDialog(message) {
+  return new Promise((resolve) => {
+    new Dialog({
+      title: "Confirmation",
+      content: `<p>${message}</p><P>Are you sure?</p>`,
+      buttons: {
+        yes: {
+          label: "Yes",
+          callback: () => resolve(true),
+        },
+        no: {
+          label: "No",
+          callback: () => resolve(false),
+        },
+      },
+      default: "no",
+    }).render(true);
+  });
+}
 
 // Function for debugging
 function debugLog(intLogType, stringLogMsg, objObject = null) {
@@ -150,11 +174,11 @@ function debugLog(intLogType, stringLogMsg, objObject = null) {
 }
 
 /*
-  Function that checks if an actor is valid for reroll tracking.
+	Function that checks if an actor is valid for reroll tracking.
  
-  An actor is considered valid if it meets the following conditions:
-  1. The actor is of type 'character'.
-  2. Unless "Ignore Minions" is disabled in settings, ensure actor does not have the 'minion' trait in its list of traits.
+	An actor is considered valid if it meets the following conditions:
+	1. The actor is of type 'character'.
+	2. Unless "Ignore Minions" is disabled in settings, ensure actor does not have the 'minion' trait in its list of traits.
 */
 function isValidActorForRerollTracking(actor) {
     // Check if the actor is a character
@@ -188,81 +212,6 @@ async function saveRollData() {
     } else {
         debugLog("Player cannot save reroll data.");
     }
-}
-
-// Function to reset reroll data for ALL actors
-function resetAllRerollStats() {
-    // Loop through all actors in the world and reset their data
-    for (const actorId in rollDataByActor) {
-        if (rollDataByActor.hasOwnProperty(actorId)) {
-            rollDataByActor[actorId] = {
-                originalRoll: null,
-                rerollCount: 0,
-                betterCount: 0,
-                worseCount: 0,
-                sameCount: 0,
-                successCount: 0,
-                critSuccessCount: 0,
-            };
-        }
-    }
-
-    // Save the reset data persistently
-    saveRollData();
-
-    // Provide feedback to the GM
-    ui.notifications.info("All reroll data has been reset for all actors.");
-}
-
-// Function to reset reroll data for the selected tokens
-function resetRerollStats() {
-    // Get the selected tokens
-    const tokens = canvas.tokens.controlled;
-    
-    // Check if any tokens are selected
-    if (tokens.length === 0) {
-        ui.notifications.warn("No tokens selected. Please select one or more tokens.");
-        return;
-    }
-
-    let resetCount = 0;
-
-    // Loop through each selected token
-    tokens.forEach(token => {
-        const actor = token.actor;
-        if (!actor) {
-			debugLog(2, "Token has no associated actor!");
-            return; // Skip if the token has no associated actor
-            
-        }
-
-        const actorId = actor.id;
-
-        // Check if actor data exists in rollDataByActor
-        if (!rollDataByActor[actorId]) {
-            ui.notifications.warn(`No reroll data found for actor: ${actor.name}`);
-            return;
-        }
-
-        // Reset the actor's reroll data
-        rollDataByActor[actorId] = {
-            originalRoll: null,
-            rerollCount: 0,
-            betterCount: 0,
-            worseCount: 0,
-            sameCount: 0,
-            successCount: 0,
-            critSuccessCount: 0,
-        };
-
-        resetCount++;
-    });
-
-    // Save the reset data persistently
-    saveRollData();
-
-    // Provide feedback to the GM
-    ui.notifications.info(`${resetCount} actor(s) had their reroll data reset.`);
 }
 
 // Function to display actor stats in chat
@@ -378,7 +327,7 @@ async function compileActorStatsToJournal() {
 	const totalBetterPct = totalRerollCount > 0 ? Math.round((totalBetterCount / totalRerollCount) * 100) : "N/A";
 	const totalWorsePct = totalRerollCount > 0 ? Math.round((totalWorseCount / totalRerollCount) * 100) : "N/A";
 	const totalSamePct = totalRerollCount > 0 ? Math.round((totalSameCount / totalRerollCount) * 100) : "N/A";
-    const totalSuccessPct = totalRerollCount > 0 ? Math.round((totalSuccessCount + totalCritSuccessCount / totalRerollCount) * 100) : "N/A";
+    const totalSuccessPct = totalRerollCount > 0 ? Math.round(((totalSuccessCount + totalCritSuccessCount) / totalRerollCount) * 100) : "N/A";
     const toalCritPct = totalRerollCount > 0 ? Math.round((totalCritSuccessCount / totalRerollCount) * 100) : "N/A";
 
     // Append totals section
@@ -502,83 +451,68 @@ function deleteActorRollData() {
         return;
     }
 
-    let deletedCount = 0;
+	const confirmation = showConfirmationDialog("This will DELETE all roll data for the selected token(s). This CANNOT be undone!");
+	if (confirmation){
+		let deletedCount = 0;
 
-    // Loop through each selected token
-    tokens.forEach(token => {
-        const actor = token.actor;
-        if (!actor) {
-            ui.notifications.warn("Token has no associated actor!");
-            return;
-        }
+		// Loop through each selected token
+		tokens.forEach(token => {
+			const actor = token.actor;
+			if (!actor) {
+				ui.notifications.warn("Token has no associated actor!");
+				return;
+			}
 
-        const actorId = actor.id;
+			const actorId = actor.id;
 
-        // Check if roll data exists for this actor
-        if (rollDataByActor[actorId]) {
-            // Delete the roll data for the actor
-            delete rollDataByActor[actorId];
-            debugLog(`Deleted roll data for ${actor.name}`);
-            deletedCount++;
-        } else {
-            ui.notifications.warn(`No roll data found for actor: ${actor.name}`);
-        }
-    });
+			// Check if roll data exists for this actor
+			if (rollDataByActor[actorId]) {
+				// Delete the roll data for the actor
+				delete rollDataByActor[actorId];
+				debugLog(`Deleted roll data for ${actor.name}`);
+				deletedCount++;
+			} else {
+				ui.notifications.warn(`No roll data found for actor: ${actor.name}`);
+			}
+		});
 
-    // Save the updated roll data persistently
-    saveRollData(); // Save Roll Data
-	compileActorStatsToJournal(); // Update Journal
+		// Save the updated roll data persistently
+		saveRollData(); // Save Roll Data
+		compileActorStatsToJournal(); // Update Journal
 
-    // Provide feedback to the GM
-    if (deletedCount > 0) {
-        ui.notifications.info(`${deletedCount} actor(s) had their roll data deleted.`);
-    } else {
-        ui.notifications.info("No roll data found to delete for the selected actors.");
-    }
+		// Provide feedback to the GM
+		if (deletedCount > 0) {
+			ui.notifications.info(`${deletedCount} actor(s) had their roll data deleted.`);
+		} else {
+			ui.notifications.info("No roll data found to delete for the selected actors.");
+		}
+	}
 }
 
 // Function to delete all reroll data - optional to delete journal also
-function deleteAllRerollStats(deleteJournal = false) {
-    // Confirm before proceeding
-    new Dialog({
-        title: "Delete All Reroll Stats",
-        content: `
-            <p>Are you sure you want to delete all Hero Point reroll stats?</p>
-            ${deleteJournal ? "<p>The associated journal entry will also be deleted.</p>" : ""}
-        `,
-        buttons: {
-            yes: {
-                icon: '<i class="fas fa-trash"></i>',
-                label: "Yes",
-                callback: async () => {
-                    // Clear the roll data
-                    rollDataByActor = {};
-                    debugLog(2, "All Hero Point reroll stats have been cleared.");
+async function deleteAllRerollStats(deleteJournal = false) {
+	
+	const confirmation = showConfirmationDialog("This will DELETE all roll data for ALL characters! This CANNOT be undone!");
+	if (confirmation) {
+		// Clear the roll data
+		rollDataByActor = {};
+		debugLog(2, "All Hero Point reroll stats have been cleared.");
 
-                    // Optionally delete the journal entry
-                    if (deleteJournal) {
-                        const journalName = "Reroll Stats";
-                        const journalEntry = game.journal.getName(journalName);
-                        if (journalEntry) {
-                            await journalEntry.delete();
-                            debugLog(2, `Journal entry "${journalName}" has been deleted.`);
-                        } else {
-                            debugLog(2, `Journal entry "${journalName}" not found.`);
-                        }
-                    }
-					saveRollData();
-                    // Notify the user
-                    debugLog("All Hero Point reroll stats have been deleted.");
-                }
-            },
-            no: {
-                icon: '<i class="fas fa-times"></i>',
-                label: "No",
-                callback: () => debugLog("Delete action cancelled.")
-            }
-        },
-        default: "no"
-    }).render(true);
+		// Optionally delete the journal entry
+		if (deleteJournal) {
+			const journalName = "Reroll Stats";
+			const journalEntry = game.journal.getName(journalName);
+			if (journalEntry) {
+				await journalEntry.delete();
+				debugLog(2, `Journal entry "${journalName}" has been deleted.`);
+			} else {
+				debugLog(2, `Journal entry "${journalName}" not found.`);
+			}
+		}
+		saveRollData();
+		// Notify the user
+		debugLog("All Hero Point reroll stats have been deleted.");
+	}
 }
 
 // Function to open screen to edit actor reroll data
