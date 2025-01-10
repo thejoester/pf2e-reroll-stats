@@ -1,5 +1,5 @@
 {
-  "name": "pf2e-reroll-stats",
+  "id": "pf2e-reroll-stats",
   "title": "PF2E ReRoll Stats",
   "description": "Tracks rolls made with 'Reroll using Hero Point' and compares the results.",
   "version": "1.2.53",
