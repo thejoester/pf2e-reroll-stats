@@ -1,6 +1,9 @@
 # P2Fe Reroll Stats
 A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls. 
 
+> [!CAUTION]
+> There is a compatibility issue with [PF2e Workbench](https://github.com/xdy/xdy-pf2e-workbench) when you have one of the Hero Point variant house rules enabled, the roll value is changed by Workbench which will skew stats. 
+
 **Note:** The intent for this is to track Hero Point rerolls, but this will also track if a character also rerolls using the "Reroll and keep [new/lower/higher] result."
 
 ### How To Use
