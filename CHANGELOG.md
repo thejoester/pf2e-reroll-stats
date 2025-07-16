@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0] - 2025-07-16
+### Added
+- Checks if [PF2e Workbench](https://foundryvtt.com/packages/xdy-pf2e-workbench) setting for variant hero point rules are enabled before tracking stats. 
+
+### Changed
+- Verified compatibility with Foundry v13.
+
 ## [1.2.54] - 2025-01-10
 ### Added
 - Enabled Github Workflow

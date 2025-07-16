@@ -727,7 +727,33 @@ Hooks.on("createChatMessage", async (message) => {
     // Check if it is a ReRoll
     if (context?.isReroll) {
         debugLog("ReRoll detected!");
+		
+		// Detect Workbench’s Variant Hero Point Rules mode
+		const isWorkbenchActive = game.modules.get("xdy-pf2e-workbench")?.active;
+		if (isWorkbenchActive && game.settings.settings.has("xdy-pf2e-workbench.heroPointRules")) {
+			const hpRule = game.settings.get("xdy-pf2e-workbench", "heroPointRules");
+			debugLog(`Workbench hp rule: ${hpRule}`);
+			
+			if (hpRule !== "no") {
+				const messageContent = `
+					<h2>Reroll Stats Blocked</h2>
+					<p>The setting in PF2e Workbench to use Variant Hero Point house rules is enabled and will cause the stats to be incorrect.</p>
+					<p>To fix this, you can either:</p>
+					<ol>
+						<li>Change the setting manually under <b>PF2e Workbench</b> > <b>Manage House Rule Settings</b> and set "Variant Hero Point house rules" to <b>Normal</b>.</li>
+						<li>Disable ReRoll Stats.</li>
+					</ol>
+				`;
 
+				ChatMessage.create({
+					user: game.user.id,
+					content: messageContent,
+					speaker: { alias: "Reroll Tracker" },
+				});
+				return;
+			}
+		}
+		
         // Get the outcome of the reroll from the context (success / critical success)
         const outcome = context?.outcome || "Unknown";
 
@@ -910,7 +936,33 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
         // Check if it is a reroll
         if (isReroll) {
             debugLog("ReRoll detected from targetHelper save!");
+			
+			// Detect Workbench’s Variant Hero Point Rules mode
+			const isWorkbenchActive = game.modules.get("xdy-pf2e-workbench")?.active;
+			if (isWorkbenchActive && game.settings.settings.has("xdy-pf2e-workbench.heroPointRules")) {
+				const hpRule = game.settings.get("xdy-pf2e-workbench", "heroPointRules");
+				debugLog(`Workbench hp rule: ${hpRule}`);
+				
+				if (hpRule !== "no") {
+					const messageContent = `
+						<h2>Reroll Stats Blocked</h2>
+						<p>The setting in PF2e Workbench to use Variant Hero Point house rules is enabled and will cause the stats to be incorrect.</p>
+						<p>To fix this, you can either:</p>
+						<ol>
+							<li>Change the setting manually under <b>PF2e Workbench</b> > <b>Manage House Rule Settings</b> and set "Variant Hero Point house rules" to <b>Normal</b>.</li>
+							<li>Disable ReRoll Stats.</li>
+						</ol>
+					`;
 
+					ChatMessage.create({
+						user: game.user.id,
+						content: messageContent,
+						speaker: { alias: "Reroll Tracker" },
+					});
+					return;
+				}
+			}			
+			
             // Compare the reroll with the original roll to determine if it's better or worse
             const rerollResult = rollTotal;
             const originalRoll = actorData.originalRoll;
@@ -986,4 +1038,3 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
         await compileActorStatsToJournal();
     }
 });
-
