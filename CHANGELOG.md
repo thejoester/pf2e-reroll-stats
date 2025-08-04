@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.3.0] - 2025-07-16
+## [1.3.1] - 2025-08-04
 ### Fixed
 - corrected module.json to not give manifest error.
 
