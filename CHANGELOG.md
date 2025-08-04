@@ -1,6 +1,10 @@
 # Changelog
 
 ## [1.3.0] - 2025-07-16
+### Fixed
+- corrected module.json to not give manifest error.
+
+## [1.3.0] - 2025-07-16
 ### Added
 - Checks if [PF2e Workbench](https://foundryvtt.com/packages/xdy-pf2e-workbench) setting for variant hero point rules are enabled before tracking stats. 
 

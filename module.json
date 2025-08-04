@@ -2,7 +2,7 @@
   "id": "pf2e-reroll-stats",
   "title": "PF2E ReRoll Stats",
   "description": "Tracks rolls made with 'Reroll using Hero Point' and compares the results.",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "compatibility": {
     "minimum": "12",
     "verified": "13"
@@ -40,10 +40,9 @@
       "system": "pf2e"
     }
   ],
-  "system": ["pf2e"],
   "url": "https://github.com/thejoester/pf2e-reroll-stats",
   "manifest": "https://github.com/thejoester/pf2e-reroll-stats/releases/latest/download/module.json",
-  "download": "https://github.com/thejoester/pf2e-reroll-stats/releases/download/1.3.0/pf2e_reroll_stats.zip",
+  "download": "https://github.com/thejoester/pf2e-reroll-stats/releases/download/1.3.1/pf2e_reroll_stats.zip",
   "readme": "https://github.com/thejoester/pf2e-reroll-stats/blob/master/README.md",
   "changelog": "https://github.com/thejoester/pf2e-reroll-stats/blob/master/CHANGELOG.md",
   "license": "https://github.com/thejoester/pf2e-reroll-stats/blob/master/LICENSE.txt",
