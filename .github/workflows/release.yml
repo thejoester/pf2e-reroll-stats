@@ -37,10 +37,15 @@ jobs:
 
       - name: Fail early if pack source is missing
         run: |
-          if [ ! -d "packs/_source" ]; then
-            echo "packs/_source not found. Add your extracted JSON to packs/_source/**"
+          # Look for any packs/*/_source/*.json
+          if ! find packs -type d -name "_source" -print -quit | grep -q . ; then
+            echo "No pack sources found. Expected at least one: packs/<pack-name>/_source/*.json"
             exit 1
           fi
+
+          # Optional: show what was found
+          echo "Found the following _source folders:"
+          find packs -type d -name "_source" -print
 
       # Compile packs from packs/_source -> packs/*.db (your script)
       - name: Compile packs
@@ -93,7 +98,7 @@ jobs:
           # Use zip with excludes to keep it clean
           zip -r "$ZIPNAME" -@ < zip-include.txt \
             -x "node_modules/*" \
-               "packs/_source/*" \
+               "packs/**/_source/*" \
                "*.log" \
                ".git/*" \
                ".github/*" \

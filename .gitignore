@@ -15,15 +15,11 @@ _build/*.js.map
 _build/*.d.ts
 
 # FoundryVTT packs
-# Keep extracted JSON source in Git so CI can compile it
-# Ignore compiled .db so they’re only produced in release
-packs/*.db
-packs/*.db-journal
-# Ensure we DO keep source
-!packs/_source/
-!packs/_source/**
-# If you also generate icons or misc in packs, keep those too
-!packs/**/.gitkeep
+# Ignore compiled DBs; keep JSON sources
+packs/**/*.db
+packs/**/*.db-journal
+!packs/**/_source/
+!packs/**/_source/**
 
 # OS files
 .DS_Store
