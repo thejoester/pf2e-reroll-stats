@@ -62,7 +62,7 @@ jobs:
           # Use jq to set fields (install jq)
           sudo apt-get update && sudo apt-get install -y jq
 
-          MANIFEST_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/module.json"
+          MANIFEST_URL="https://github.com/${OWNER_REPO}/releases/latest/download/module.json"
           DOWNLOAD_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/pf2e_reroll_stats.zip"
 
           jq --arg v "$VERSION" \
