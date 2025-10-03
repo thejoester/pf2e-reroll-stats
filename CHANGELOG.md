@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.2 - 2025-10-03
+## [1.4.2] - 2025-10-03
 ### Changed
 - Updated en.json
 
