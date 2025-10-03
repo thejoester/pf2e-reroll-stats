@@ -1,0 +1,31 @@
+{
+  "name": "Compile Reroll Stats",
+  "type": "script",
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "command": "/*\n\nThis Macro will compile all reroll stats for actors and create a journal entry named \"Reroll tracker Stats\" in the base Journal directory.\n\n*/\n\n// Compile Journal\ncompileActorStatsToJournal();\n// Replace \"Your Journal Name\" with the name of the journal entry\nconst journalName = \"Reroll Stats\";\n\n// Find the journal entry by name\nconst journal = game.journal.contents.find(j => j.name === journalName);\n\n// If the journal entry exists, show it\nif (journal) {\n  journal.sheet.render(true);\n} else {\n  console.error(`Journal entry with name \"${journalName}\" not found.`);\n}",
+  "img": "icons/sundries/documents/document-bound-white-tan.webp",
+  "author": "CLMiGpsYVSTK4VM8",
+  "scope": "global",
+  "folder": null,
+  "ownership": {
+    "default": 0,
+    "CLMiGpsYVSTK4VM8": 3
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "pf2e",
+    "systemVersion": "6.7.2",
+    "createdTime": 1733576827255,
+    "modifiedTime": 1734000358233,
+    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+  },
+  "_id": "i8JWfo4X13n7SUbL",
+  "sort": 500000,
+  "_key": "!macros!i8JWfo4X13n7SUbL"
+}

@@ -11,53 +11,117 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Use Node.js 22 (LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
 
-      - name: Extract Version From Tag
+      - name: Install dependencies
+        run: |
+          npm ci
+          # Ensure the Foundry CLI is present (dev dep in package.json)
+          npx --no-install @foundryvtt/foundryvtt-cli --version
+
+      - name: Determine version from tag
         id: get_version
-        uses: battila7/get-version-action@v2
+        run: |
+          RAW="${{ github.event.release.tag_name }}"
+          # Strip a leading 'v' if present (v0.3.1 -> 0.3.1)
+          echo "version=${RAW#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Modify Module Manifest With Release-Specific Values
-        id: sub_manifest_link_version
-        uses: microsoft/variable-substitution@v1
-        with:
-          files: "module.json"
-        env:
-          version: ${{steps.get_version.outputs.version-without-v}}
-          manifest: https://github.com/${{github.repository}}/releases/latest/download/module.json
-          download: https://github.com/${{github.repository}}/releases/download/${{github.event.release.tag_name}}/pf2e_reroll_stats.zip
+      - name: Validate module.json is valid JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('module.json','utf8')); console.log('module.json OK')"
 
-      - name: Create Module Archive
-        run: zip -r pf2e_reroll_stats.zip module.json README.md LICENSE.md CHANGELOG.md assets/ packs/ scripts/
+      - name: Fail early if pack source is missing
+        run: |
+          if [ ! -d "packs/_source" ]; then
+            echo "packs/_source not found. Add your extracted JSON to packs/_source/**"
+            exit 1
+          fi
 
-      - uses: release-flow/keep-a-changelog-action@v3
-        id: changelog
-        with:
-          command: query
-          version: ${{ steps.get_version.outputs.version-without-v }}
+      # Compile packs from packs/_source -> packs/*.db (your script)
+      - name: Compile packs
+        run: |
+          node ./_build/compile-all-packs.mjs ./packs
 
-      - name: Update Release With Files
-        id: create_version_release
+      # Update module.json: version + URLs that point to this release
+      - name: Update module.json for release
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          OWNER_REPO="${{ github.repository }}"
+          TAG="${{ github.event.release.tag_name }}"
+
+          # Use jq to set fields (install jq)
+          sudo apt-get update && sudo apt-get install -y jq
+
+          MANIFEST_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/module.json"
+          DOWNLOAD_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/pf2e_reroll_stats.zip"
+
+          jq --arg v "$VERSION" \
+             --arg manifest "$MANIFEST_URL" \
+             --arg download "$DOWNLOAD_URL" \
+             '.version=$v
+              | .manifest?=$manifest
+              | .download?=$download' \
+             module.json > module.json.tmp
+
+          mv module.json.tmp module.json
+
+          echo "module.json updated:"
+          cat module.json
+
+      # Create the distributable zip (exclude dev junk)
+      - name: Build zip
+        run: |
+          ZIPNAME="pf2e_reroll_stats.zip"
+          # Create list file for zip to avoid accidental includes
+          cat > zip-include.txt << 'EOF'
+          assets
+          lang
+          packs
+          _build
+          scripts
+          module.json
+          README.md
+          LICENSE
+          CHANGELOG.md
+          EOF
+
+          # Use zip with excludes to keep it clean
+          zip -r "$ZIPNAME" -@ < zip-include.txt \
+            -x "node_modules/*" \
+               "packs/_source/*" \
+               "*.log" \
+               ".git/*" \
+               ".github/*" \
+               ".vscode/*" \
+               "dist/*" \
+               "coverage/*"
+
+          echo "Created $ZIPNAME"
+
+      # Update the GitHub release assets (module.json + zip)
+      - name: Attach assets to GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # We are updating the *existing* release that triggered the workflow
           allowUpdates: true
+          artifactErrorsFailBuild: true
+          replacesArtifacts: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "module.json,pf2e_reroll_stats.zip"
+          body: ${{ github.event.release.body }}
+          tag: ${{ github.event.release.tag_name }}
           draft: ${{ github.event.release.draft }}
           prerelease: ${{ github.event.release.prerelease }}
-          name: ${{ steps.get_version.outputs.version-without-v }}
-          body: ${{ steps.changelog.outputs.release-notes }}
-          artifacts: "./module.json, ./pf2e_reroll_stats.zip"
 
-      - name: Publish Module to FoundryVTT Website
-        id: publish-to-foundry-website
-        if: ${{ ! github.event.release.prerelease }}
+      # Publish to FoundryVTT package index (skip for pre-releases)
+      - name: Publish to FoundryVTT Package Index
+        if: ${{ !github.event.release.prerelease }}
         uses: cs96and/FoundryVTT-release-package@v1
         with:
           package-token: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}
-          manifest-url: https://github.com/${{github.repository}}/releases/download/${{github.event.release.tag_name}}/module.json
+          manifest-url: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/module.json

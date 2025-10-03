@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.0] - 2025-10-03
+### Added
+- When re-roll without outcome is detected, will prompt GM to choose outcome. 
+- Results in chat are color coded based on results.
+
 ## [1.3.1] - 2025-08-04
 ### Fixed
 - corrected module.json to not give manifest error.

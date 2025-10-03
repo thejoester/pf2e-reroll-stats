@@ -1,0 +1,31 @@
+{
+  "name": "Reroll Editor",
+  "type": "script",
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "command": "openRerollEditor();",
+  "img": "icons/tools/scribal/ink-quill-pink.webp",
+  "author": "CLMiGpsYVSTK4VM8",
+  "scope": "global",
+  "folder": null,
+  "ownership": {
+    "default": 0,
+    "CLMiGpsYVSTK4VM8": 3
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "pf2e",
+    "systemVersion": "6.7.2",
+    "createdTime": 1734000358189,
+    "modifiedTime": 1734002484258,
+    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+  },
+  "_id": "Krw1KpuB7VDPD8lI",
+  "sort": 200000,
+  "_key": "!macros!Krw1KpuB7VDPD8lI"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Delete Selected ReRoll Data",
+  "type": "script",
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "command": "/*\n\nThis macro will DELETE all re-roll data for selected token actor! If you want to just reset all stats to 0, then usee the Reset macro instead. \n\n!!! CAN NOT BE UNDONE !!!\n\n\n*/\ndeleteActorRollData();",
+  "img": "icons/svg/blind.svg",
+  "author": "CLMiGpsYVSTK4VM8",
+  "scope": "global",
+  "folder": null,
+  "ownership": {
+    "default": 0,
+    "CLMiGpsYVSTK4VM8": 3
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "pf2e",
+    "systemVersion": "6.7.2",
+    "createdTime": 1733578138705,
+    "modifiedTime": 1734000358233,
+    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+  },
+  "_id": "Ebhm5Q11zYOnOoXF",
+  "sort": 300000,
+  "_key": "!macros!Ebhm5Q11zYOnOoXF"
+}

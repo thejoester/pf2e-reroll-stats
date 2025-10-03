@@ -1,0 +1,31 @@
+{
+  "name": "Reset Roll Stats",
+  "type": "script",
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "command": "/*\n\nThis Macro will CLEAR out all reroll data for the Selected Actor, setting all counts to 0.\n\n!!! CAN NOT BE UNDONE !!!\n\n*/\n\nresetRerollStats();",
+  "img": "icons/magic/time/arrows-circling-green.webp",
+  "author": "CLMiGpsYVSTK4VM8",
+  "scope": "global",
+  "folder": null,
+  "ownership": {
+    "default": 0,
+    "CLMiGpsYVSTK4VM8": 3
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "pf2e",
+    "systemVersion": "6.7.2",
+    "createdTime": 1733576833767,
+    "modifiedTime": 1734000358233,
+    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+  },
+  "_id": "gMiDelekQFDvuQmV",
+  "sort": 600000,
+  "_key": "!macros!gMiDelekQFDvuQmV"
+}

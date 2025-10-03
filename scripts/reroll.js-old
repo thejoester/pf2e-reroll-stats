@@ -1,4 +1,3 @@
-import { LT } from "./localization.js";
 // Log to Console
 console.log("%cPF2e ReRoll Stats || reroll.js loaded", "color: orange; font-weight: bold;");
 
@@ -14,8 +13,8 @@ let rollDataByActor = {};
 Hooks.once("init", () => {
     // Register settings for persistent data
     game.settings.register(MODULE_NAME, "rollData", {
-        name: LT.settings.rollDataName(),
-        hint: LT.settings.rollDataHint(),
+        name: "Reroll Tracker Data",
+        hint: "Stores reroll tracking data for each actor.",
         scope: "world", // Saved at the world level
         config: false,  // Not exposed in the settings menu
         type: Object,
@@ -24,8 +23,8 @@ Hooks.once("init", () => {
     
 	// Register settings to output to chat after a reroll
     game.settings.register(MODULE_NAME, "outputToChat", {
-        name: LT.settings.outputToChatName(),
-        hint: LT.settings.outputToChatHint(),
+        name: "Output actor stats to chat after reroll?",
+        hint: "Will output an actor's reroll stats in chat after each reroll.",
         scope: "world", 
         config: true,  
         type: Boolean,
@@ -38,8 +37,8 @@ Hooks.once("init", () => {
 	
 	// Register settings to ignore minions
     game.settings.register(MODULE_NAME, "ignoreMinion", {
-        name: LT.settings.ignoreMinionName(),
-        hint: LT.settings.ignoreMinionHint(),
+        name: "Ignore Minions",
+        hint: "Ignore rolls from minions (companions, summons, etc).",
         scope: "world", 
         config: true,  
         type: Boolean,
@@ -48,16 +47,16 @@ Hooks.once("init", () => {
 	 
     // Register settings for persistent data
     game.settings.register(MODULE_NAME, "debugLevel", {
-        name: LT.settings.debugLevelName(),
-		hint: LT.settings.debugLevelHint(),
+        name: "Debug Level",
+		hint: "Set the debug level for logging. None disables all logging, All includes info, warnings, and errors.",
 		scope: "world",
 		config: true,
 		type: String,
 		choices: {
-			"none": LT.settings.debugLevelNone(),
-			"error": LT.settings.debugLevelErrors(),
-			"warn": LT.settings.debugLevelWarnings(),
-			"all": LT.settings.debugLevelAll()
+			"none": "None",
+			"error": "Errors",
+			"warn": "Warnings",
+			"all": "All"
 		},
 		default: "none", // Default to no logging
 		requiresReload: true
@@ -67,121 +66,11 @@ Hooks.once("init", () => {
 
 });
 
-// helper: record the GM choice for a no-outcome reroll
-async function _rrRecordNoOutcomeSelection({ actorId, choice }) {
-	try {
-		const actor = game.actors.get(actorId);
-		if (!actor) {
-			DL(2, `_rrRecordNoOutcomeSelection(): actor not found ${actorId}`);
-			return;
-		}
-
-		// Ensure bucket exists
-		if (!rollDataByActor[actorId]) {
-			rollDataByActor[actorId] = {
-				originalRoll: null,
-				rerollCount: 0,
-				betterCount: 0,
-				worseCount: 0,
-				sameCount: 0,
-				successCount: 0,
-				critSuccessCount: 0
-			};
-		}
-		const data = rollDataByActor[actorId];
-
-        // Setup Colors for chat output
-        let betterColor = "";
-        let successColor = "";
-        let critColor = "";
-        let worseColor = "";
-        let sameColor = "";
-        
-
-		// Always +1 total rerolls
-		data.rerollCount = (data.rerollCount || 0) + 1;
-
-		switch (choice) {
-			case "better-crit":
-				data.betterCount = (data.betterCount || 0) + 1;
-				data.critSuccessCount = (data.critSuccessCount || 0) + 1;
-                betterColor = "color: green; font-weight: bold;";
-                critColor = "color: green; font-weight: bold;";
-				DL(`_rrRecordNoOutcomeSelection(): better-crit for ${actor.name}`);
-				break;
-			case "better-success":
-				data.betterCount = (data.betterCount || 0) + 1;
-				data.successCount = (data.successCount || 0) + 1;
-                betterColor = "color: green; font-weight: bold;";
-                successColor = "color: green; font-weight: bold;";
-				DL(`_rrRecordNoOutcomeSelection(): better-success for ${actor.name}`);
-				break;
-			case "better-fail":
-				data.betterCount = (data.betterCount || 0) + 1;
-                betterColor = "color: green; font-weight: bold;";
-				DL(`_rrRecordNoOutcomeSelection(): better-fail for ${actor.name}`);
-				break;
-			case "worse":
-                worseColor = "color: red; font-weight: bold;";
-				data.worseCount = (data.worseCount || 0) + 1;
-				DL(`_rrRecordNoOutcomeSelection(): worse for ${actor.name}`);
-				break;
-			case "same":
-                sameColor = "color: blue; font-weight: bold;";
-				data.sameCount = (data.sameCount || 0) + 1;
-				DL(`_rrRecordNoOutcomeSelection(): same for ${actor.name}`);
-				break;
-			default:
-				DL(2, `_rrRecordNoOutcomeSelection(): unknown choice ${choice}`);
-				return;
-		}
-
-		// Persist
-		await saveRollData();
-
-		// Optional: output to chat (mirrors your normal reroll path)
-		const outputToChat = game.settings.get(MODULE_NAME, "outputToChat");
-		if (outputToChat) {
-			const r = Math.max(1, Number(data.rerollCount) || 1); // prevent divide by zero
-			const betterPct = Math.round(((Number(data.betterCount) || 0) / r) * 100);
-			const worsePct = Math.round(((Number(data.worseCount) || 0) / r) * 100);
-			const samePct = Math.round(((Number(data.sameCount) || 0) / r) * 100);
-			const successTotal = (Number(data.successCount) || 0) + (Number(data.critSuccessCount) || 0);
-			const successPct = Math.round((successTotal / r) * 100);
-			const critPct = Math.round(((Number(data.critSuccessCount) || 0) / r) * 100);
-
-			const messageContent = `
-                <h2>${LT.chat.actorHeader({ actorName: actor.name })}</h2>
-                <ul>
-                    <li><strong>${LT.chat.rerollCountLabel()}</strong> ${data.rerollCount}</li>
-                    <li style="${betterColor}"><strong>${LT.chat.betterResultsLabel()}</strong> ${data.betterCount} (${betterPct}%)</li>
-                    <li style="${worseColor}"><strong>${LT.chat.worseResultsLabel()}</strong> ${data.worseCount} (${worsePct}%)</li>
-                    <li style="${sameColor}"><strong>${LT.chat.sameResultsLabel()}</strong> ${data.sameCount} (${samePct}%)</li>
-                    <li style="${successColor}"><strong>${LT.chat.successPercentageLabel()}</strong> ${successTotal} (${successPct}%)</li>
-                    <li style="${critColor}"><strong>${LT.chat.criticalSuccessPercentageLabel()}</strong> ${data.critSuccessCount} (${critPct}%)</li>
-                </ul>
-            `;
-
-			await ChatMessage.create({
-                user: game.user.id,
-                content: messageContent,
-                speaker: { alias: LT.chat.speakerSingle() }
-            });
-		}
-
-        // reset colors
-        betterColor = "";
-        successColor = "";
-        critColor = "";
-        worseColor = "";
-        sameColor = "";
-
-		// Rebuild journal summary (keep consistent with your existing flow)
-		await compileActorStatsToJournal();
-	} catch (err) {
-		DL(3, `_rrRecordNoOutcomeSelection(): error ${err?.message || err}`, err);
-	}
-}
+Hooks.once("ready", async () => {
+    // Initialize rollDataByActor from game settings or as an empty object
+    rollDataByActor = game.settings.get(MODULE_NAME, "rollData") || {};
+    console.log(`%c${LOG_LABEL} Reroll Tracker ready!`, "color: Orange; font-weight: bold;");
+});
 
 /*
 	Displays a confirmation dialog with a custom message.
@@ -191,15 +80,15 @@ async function _rrRecordNoOutcomeSelection({ actorId, choice }) {
 async function showConfirmationDialog(message) {
   return new Promise((resolve) => {
     new Dialog({
-      title: LT.dialog.titleConfirm(),
-      content: `<p>${message}</p><p>${LT.dialog.areYouSure()}</p>`,
+      title: "Confirmation",
+      content: `<p>${message}</p><P>Are you sure?</p>`,
       buttons: {
         yes: {
-          label: LT.dialog.yes(),
+          label: "Yes",
           callback: () => resolve(true),
         },
         no: {
-          label: LT.dialog.no(),
+          label: "No",
           callback: () => resolve(false),
         },
       },
@@ -217,15 +106,7 @@ export function DL(intLogType, stringLogMsg, objObject = null) {
 		intLogType = 1; // Default log type to 'all'
 	}
 
-	let debugLevel = "none";
-    try {
-        const key = `${MODULE_NAME}.debugLevel`;
-        if (game?.settings?.settings?.has?.(key)) {
-            debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
-        }
-    } catch (e) {
-        // ignore – fall back to "none"
-    }
+	const debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
 
 	// Map debugLevel setting to numeric value for comparison
 	const levelMap = {
@@ -297,7 +178,7 @@ export function DL(intLogType, stringLogMsg, objObject = null) {
  
 	An actor is considered valid if it meets the following conditions:
 	1. The actor is of type 'character'.
-	2. Unless LT.settings.ignoreMinionName() is disabled in settings, ensure actor does not have the 'minion' trait in its list of traits.
+	2. Unless "Ignore Minions" is disabled in settings, ensure actor does not have the 'minion' trait in its list of traits.
 */
 function isValidActorForRerollTracking(actor) {
     // Check if the actor is a character
@@ -339,12 +220,12 @@ function displayActorStatsInChat() {
 	// Get the selected token's actor
     const token = canvas.tokens.controlled[0];
     if (!token) {
-        ui.notifications.error(LT.notifications.noTokenSelected());
+        ui.notifications.error("No token selected. Please select a token.");
         return;
     }
     const actor = token.actor;
     if (!actor) { // make sure an actor exists for token
-        ui.notifications.error(LT.notifications.selectedTokenHasNoActor());
+        ui.notifications.error("Selected token has no associated actor.");
         return;
     }
 
@@ -353,7 +234,7 @@ function displayActorStatsInChat() {
     const actorData = rollDataByActor[actorId];
 
     if (!actorData) {
-        ui.notifications.info(LT.notifications.noRerollDataForActor({ actorName }));
+        ui.notifications.info(`No reroll data found for actor: ${actorName}`);
         return;
     }
 
@@ -371,14 +252,14 @@ function displayActorStatsInChat() {
 	
 	// Prepare the chat message content
     const messageContent = `
-        <h2>${LT.chat.actorHeader({ actorName: actor.name })}</h2>
+        <h2>Reroll Stats for ${actorName}</h2>
         <ul>
-            <li><strong>${LT.chat.rerollCountLabel()}</strong> ${rerollCount}</li>
-            <li><strong>${LT.chat.betterResultsLabel()}</strong> ${betterCount} (${actorBetterPct}%)</li>
-            <li><strong>${LT.chat.worseResultsLabel()}</strong> ${worseCount} (${actorWorsePct}%)</li>
-            <li><strong>${LT.chat.sameResultsLabel()}</strong> ${sameCount} (${actorSamePct}%)</li>
-			<li><strong>${LT.chat.successPercentageLabel()}</strong> ${successCount + critSuccessCount} (${successPct}%)</li>
-			<li><strong>${LT.chat.criticalSuccessPercentageLabel()}</strong> ${critSuccessCount} (${critPct}%)</li>
+            <li><strong>Reroll Count:</strong> ${rerollCount}</li>
+            <li><strong>Better Results:</strong> ${betterCount} (${actorBetterPct}%)</li>
+            <li><strong>Worse Results:</strong> ${worseCount} (${actorWorsePct}%)</li>
+            <li><strong>Same Results:</strong> ${sameCount} (${actorSamePct}%)</li>
+			<li><strong>Reroll Sucess:</strong> ${successCount + critSuccessCount} (${successPct}%)</li>
+			<li><strong>Reroll Crit:</strong> ${critSuccessCount} (${critPct}%)</li>
         </ul>
     `;
 
@@ -387,14 +268,14 @@ function displayActorStatsInChat() {
         user: game.user.id,
         content: messageContent,
         speaker: { 
-			alias: LT.chat.speakerSingle()
+			alias: "Reroll Tracker"
 		},		
     });
 }
 
 // Function to compile actor stats into a journal entry with totals and pages
 async function compileActorStatsToJournal() {
-    let journalContent = `<h1>${LT.journalTitle()}</h1>`;
+    let journalContent = "<h1>Reroll Stats</h1>";
 
     // Initialize totals
     let totalRerollCount = 0;
@@ -406,8 +287,8 @@ async function compileActorStatsToJournal() {
 	let actorBetterPct = 0;
 	let actorWorsePct = 0;
 	let actorSamePct = 0;
-	let actorSuccessPct = 0;
-	let actorCritPct = 0;
+	let actorsuccessPercentage = 0;
+	let actorcritsuccessPercentage = 0;
 
     // Compile individual actor stats
     for (const [actorId, stats] of Object.entries(rollDataByActor)) {
@@ -424,12 +305,12 @@ async function compileActorStatsToJournal() {
         journalContent += `
             <h2>${actor.name}</h2>
             <ul>
-                <li><strong>${LT.chat.totalRerollCountLabel()}</strong> ${stats.rerollCount || 0}</li>
-				<li><strong>${LT.chat.totalBetterResultsLabel()}</strong> ${stats.betterCount || 0} (${actorBetterPct}%)</li>
-                <li><strong>${LT.chat.totalWorseResultsLabel()}</strong> ${stats.worseCount || 0} (${actorWorsePct}%)</li>
-                <li><strong>${LT.chat.totalSameResultsLabel()}</strong> ${stats.sameCount || 0} (${actorSamePct}%)</li>
-                <li><strong>${LT.chat.totalSuccessResultsLabel()}</strong> ${stats.successCount + stats.critSuccessCount || 0} (${actorSuccessPct}%)</li>
-                <li><strong>${LT.chat.totalCriticalResultsLabel()}</strong> ${stats.critSuccessCount || 0} (${actorCritPct}%)</li>
+                <li><strong>Total Reroll Count:</strong> ${stats.rerollCount || 0}</li>
+				<li><strong>Total Better Results:</strong> ${stats.betterCount || 0} (${actorBetterPct}%)</li>
+                <li><strong>Total Worse Results:</strong> ${stats.worseCount || 0} (${actorWorsePct}%)</li>
+                <li><strong>Total Same Results:</strong> ${stats.sameCount || 0} (${actorSamePct}%)</li>
+                <li><strong>Total Success Count:</strong> ${stats.successCount + stats.critSuccessCount || 0} (${actorSuccessPct}%)</li>
+                <li><strong>Total Critical Success Count:</strong> ${stats.critSuccessCount || 0} (${actorCritPct}%)</li>
             </ul>
         `;
 
@@ -447,23 +328,23 @@ async function compileActorStatsToJournal() {
 	const totalWorsePct = totalRerollCount > 0 ? Math.round((totalWorseCount / totalRerollCount) * 100) : "N/A";
 	const totalSamePct = totalRerollCount > 0 ? Math.round((totalSameCount / totalRerollCount) * 100) : "N/A";
     const totalSuccessPct = totalRerollCount > 0 ? Math.round(((totalSuccessCount + totalCritSuccessCount) / totalRerollCount) * 100) : "N/A";
-    const totalCritPct = totalRerollCount > 0 ? Math.round((totalCritSuccessCount / totalRerollCount) * 100) : "N/A";
+    const toalCritPct = totalRerollCount > 0 ? Math.round((totalCritSuccessCount / totalRerollCount) * 100) : "N/A";
 
     // Append totals section
     journalContent += `
-        <h2>${LT.chat.totalsHeader()}</h2>
+        <h2>Total Stats</h2>
         <ul>
-            <li><strong>${LT.chat.totalRerollCountLabel()}</strong> ${totalRerollCount}</li>
-            <li><strong>${LT.chat.totalBetterResultsLabel()}</strong> ${totalBetterCount} (${totalBetterPct}%)</li>
-            <li><strong>${LT.chat.totalWorseResultsLabel()}</strong> ${totalWorseCount} (${totalWorsePct}%)</li>
-            <li><strong>${LT.chat.totalSameResultsLabel()}</strong> ${totalSameCount} (${totalSamePct}%)</li>
-            <li><strong>${LT.chat.totalSuccessResultsLabel()}</strong> ${totalSuccessCount} (${totalSuccessPct}%)</li>
-            <li><strong>${LT.chat.totalCriticalResultsLabel()}</strong> ${totalCritSuccessCount} (${totalCritPct}%)</li>
+            <li><strong>Total Reroll Count:</strong> ${totalRerollCount}</li>
+            <li><strong>Total Better Results:</strong> ${totalBetterCount} (${totalBetterPct}%)</li>
+            <li><strong>Total Worse Results:</strong> ${totalWorseCount} (${totalWorsePct}%)</li>
+            <li><strong>Total Same Results:</strong> ${totalSameCount} (${totalSamePct}%)</li>
+            <li><strong>Total Success Results:</strong> ${totalSuccessCount} (${totalSuccessPct}%)</li>
+            <li><strong>Total Critical Results:</strong> ${totalCritSuccessCount} (${toalCritPct}%)</li>
         </ul>
     `;
 
     // Define the journal entry name
-    const journalName = LT.journalTitle();
+    const journalName = "Reroll Stats";
     let journalEntry = game.journal.getName(journalName);
 
 	// Set Permissions
@@ -539,14 +420,14 @@ function displayCombinedRerollStats() {
 
     // Prepare message content
     const messageContent = `
-        <h2>${LT.chat.totalsHeader()}</h2>
+        <h2>Reroll Stats totals</h2>
         <ul>
-            <li><strong>${LT.chat.totalRerollCountLabel()}</strong> ${totalRerollCount}</li>
-            <li><strong>${LT.chat.betterResultsLabel()}</strong> ${totalBetterCount} (${totalBetterPct}%)</li>
-            <li><strong>${LT.chat.worseResultsLabel()}</strong> ${totalWorseCount} (${totalWorsePct}%)</li>
-            <li><strong>${LT.chat.sameResultsLabel()}</strong> ${totalSameCount} (${totalSamePct}%)</li>
-            <li><strong>${LT.chat.totalSuccessResultsLabel()}</strong> ${totalSuccessCount + totalCritSuccessCount} (${totalSuccessPct}%)</li>
-            <li><strong>${LT.chat.totalCriticalResultsLabel()}</strong> ${totalCritSuccessCount} (${totalCritPct}%)</li>
+            <li><strong>Total Reroll Count:</strong> ${totalRerollCount}</li>
+<li><strong>Better Results:</strong> ${totalBetterCount} (${totalBetterPct})%</li>
+            <li><strong>Worse Results:</strong> ${totalWorseCount} (${totalWorsePct})%</li>
+            <li><strong>Same Results:</strong> ${totalSameCount} (${totalSamePct})%</li>
+            <li><strong>Success Percentage:</strong> ${totalSuccessCount + totalCritSuccessCount} (${totalSuccessPct})%</li>
+            <li><strong>Critical Success Percentage:</strong> ${totalCritSuccessCount} (${totalCritPct})%</li>
         </ul>
     `;
 
@@ -554,23 +435,23 @@ function displayCombinedRerollStats() {
     ChatMessage.create({
         user: game.user.id,
         content: messageContent,
-        speaker: { alias: LT.chat.speakerCombined() },
+        speaker: { alias: "Combined Reroll Tracker" },
     });
     DL("Combined reroll stats calculated and displayed.");
 }
 
 // Function to delete all roll data for a selected token's actor
-async function deleteActorRollData() {
+function deleteActorRollData() {
     // Get the selected tokens
     const tokens = canvas.tokens.controlled;
 
     // Check if any tokens are selected
     if (tokens.length === 0) {
-        ui.notifications.warn(LT.notifications.noTokensSelected());
+        ui.notifications.warn("No tokens selected. Please select one or more tokens.");
         return;
     }
 
-	const confirmation = await showConfirmationDialog(LT.deleteSelected());
+	const confirmation = showConfirmationDialog("This will DELETE all roll data for the selected token(s). This CANNOT be undone!");
 	if (confirmation){
 		let deletedCount = 0;
 
@@ -578,7 +459,7 @@ async function deleteActorRollData() {
 		tokens.forEach(token => {
 			const actor = token.actor;
 			if (!actor) {
-				ui.notifications.warn(LT.notifications.tokenHasNoActor());
+				ui.notifications.warn("Token has no associated actor!");
 				return;
 			}
 
@@ -591,19 +472,19 @@ async function deleteActorRollData() {
 				DL(`Deleted roll data for ${actor.name}`);
 				deletedCount++;
 			} else {
-				ui.notifications.warn(LT.notifications.noRollDataForActor({ actorName: actor.name }));
+				ui.notifications.warn(`No roll data found for actor: ${actor.name}`);
 			}
 		});
 
 		// Save the updated roll data persistently
-		await saveRollData(); // Save Roll Data
-		await compileActorStatsToJournal(); // Update Journal
+		saveRollData(); // Save Roll Data
+		compileActorStatsToJournal(); // Update Journal
 
 		// Provide feedback to the GM
 		if (deletedCount > 0) {
-			ui.notifications.info(LT.notifications.deletedActorCount({ count: deletedCount }));
+			ui.notifications.info(`${deletedCount} actor(s) had their roll data deleted.`);
 		} else {
-			ui.notifications.info(LT.notifications.noRollDataToDeleteSelected());
+			ui.notifications.info("No roll data found to delete for the selected actors.");
 		}
 	}
 }
@@ -611,7 +492,7 @@ async function deleteActorRollData() {
 // Function to delete all reroll data - optional to delete journal also
 async function deleteAllRerollStats(deleteJournal = false) {
 	
-	const confirmation = await showConfirmationDialog(LT.deleteAll());
+	const confirmation = showConfirmationDialog("This will DELETE all roll data for ALL characters! This CANNOT be undone!");
 	if (confirmation) {
 		// Clear the roll data
 		rollDataByActor = {};
@@ -619,7 +500,7 @@ async function deleteAllRerollStats(deleteJournal = false) {
 
 		// Optionally delete the journal entry
 		if (deleteJournal) {
-			const journalName = LT.journalTitle();
+			const journalName = "Reroll Stats";
 			const journalEntry = game.journal.getName(journalName);
 			if (journalEntry) {
 				await journalEntry.delete();
@@ -628,7 +509,7 @@ async function deleteAllRerollStats(deleteJournal = false) {
 				DL(2, `Journal entry "${journalName}" not found.`);
 			}
 		}
-		await saveRollData();
+		saveRollData();
 		// Notify the user
 		DL("All Hero Point reroll stats have been deleted.");
 	}
@@ -639,7 +520,7 @@ async function openRerollEditor() {
     
 	// Retrieve stored reroll data
     if (!rollDataByActor || Object.keys(rollDataByActor).length === 0) {
-        ui.notifications.info(LT.notifications.noActorsWithRerollData());
+        ui.notifications.info("No actors with reroll data found.");
         return;
     }
 
@@ -648,7 +529,7 @@ async function openRerollEditor() {
     <form style="width: 100%; height: 100%; max-height: 600px; overflow-y: auto; padding: 5px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9;">
         <div style="width: 300px; margin-bottom: 20px;">
             <select id="actor-select" style="width: 100%; padding: 8px; font-size: 1em; border: 1px solid #ccc; border-radius: 4px;">
-			<option>${LT.selectActor()}</option>
+			<option>- Select Actor -</option>
                 ${Object.keys(rollDataByActor).map(actorId => {
                     const actor = game.actors.get(actorId);
                     return actor ? `<option value="${actorId}">${actor.name}</option>` : "";
@@ -669,14 +550,14 @@ async function openRerollEditor() {
             `).join("")}
         </div>
         <div style="text-align: center; margin-top: 20px;">
-            <button type="button" id="save-reroll-data" style="width: 100%; padding: 5px; font-size: 1.2em; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">${LT.save()}</button>
+            <button type="button" id="save-reroll-data" style="width: 100%; padding: 5px; font-size: 1.2em; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Save</button>
         </div>
     </form>
     `;
 
     // Create a dialog window
     const dialog = new Dialog({
-        title: LT.dialog.editTitle(),
+        title: "Edit Reroll Data",
         content: content,
         buttons: {},
         render: html => {
@@ -726,31 +607,31 @@ async function openRerollEditor() {
 						(actorData.sameCount || 0) !== 
 						(actorData.rerollCount || 0)
 					) {
-						ui.notifications.error(LT.notifications.countsDoNotAddUp());
+						ui.notifications.error("Error: Reroll count data does not add up correctly!");
 						return;
 					}
 					
 					// Check if successCount or critSuccessCount is greater than betterRolls
 					if (
-						(actorData.successCount || 0) > (actorData.betterCount || 0) || 
-						(actorData.critSuccessCount || 0) > (actorData.betterCount || 0)
+						(actorData.success || 0) > (actorData.betterRolls || 0) || 
+						(actorData.critSuccess || 0) > (actorData.betterRolls || 0)
 					) {
-						ui.notifications.error(LT.notifications.successCountsExceedBetter());
+						ui.notifications.error("Error: Success or Crit Success count cannot exceed Better Rolls count!");
 						return;
 					}
 					
 					// prompt for confirmation
                     const confirmed = await Dialog.confirm({
-                        title: LT.dialog.saveChanges(),
-                        content: LT.dialog.areYouSure(),
+                        title: "Save Changes",
+                        content: "Are you sure you want to save edited data?",
                     });
 
 					// If yes
                     if (confirmed) {
                         // await game.settings.set(MODULE_NAME, "rollData", rollDataByActor);
-						await saveRollData();
-						await compileActorStatsToJournal();
-                        ui.notifications.info(LT.notifications.saved());
+						saveRollData();
+						compileActorStatsToJournal();
+                        ui.notifications.info("Reroll data saved successfully.");
 						dialog.close();
                     } else {
                         dialog.close();
@@ -846,46 +727,6 @@ Hooks.on("createChatMessage", async (message) => {
     // Check if it is a ReRoll
     if (context?.isReroll) {
         DL("ReRoll detected!");
-
-        // If outcome is missing (no DC prompt), we whisper a GM-only chooser and stop further auto-accounting
-        const hasOutcome = !!context?.outcome;
-        if (!hasOutcome) {
-            DL("createChatMessage(): Reroll without outcome detected — prompting GM.");
-
-            // Build the button bar (data attributes drive our click handler)
-            const actorId = actor.id;
-            const promptHtml = `
-                <div>
-                    <p>${LT.chat.noOutcomePrompt()}</p>
-                    <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
-                        <button type="button" class="reroll-no-outcome-btn" data-choice="better-crit" data-actor-id="${actorId}">${LT.chat.betterCritBtn()}</button>
-                        <button type="button" class="reroll-no-outcome-btn" data-choice="better-success" data-actor-id="${actorId}">${LT.chat.betterSuccessBtn()}</button>
-                        <button type="button" class="reroll-no-outcome-btn" data-choice="better-fail" data-actor-id="${actorId}">${LT.chat.betterFailBtn()}</button>
-                        <button type="button" class="reroll-no-outcome-btn" data-choice="worse" data-actor-id="${actorId}">${LT.chat.worseBtn()}</button>
-                        <button type="button" class="reroll-no-outcome-btn" data-choice="same" data-actor-id="${actorId}">${LT.chat.sameBtn()}</button>
-                    </div>
-                </div>
-            `;
-
-            // Whisper to all GMs
-            const gmRecipients = ChatMessage.getWhisperRecipients("GM").map(u => u.id);
-            await ChatMessage.create({
-                user: game.user.id,
-                content: promptHtml,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                whisper: gmRecipients,
-                speaker: { alias: LT.chat.speakerSingle() },
-                flags: {
-                    [MODULE_NAME]: {
-                        type: "noOutcomePrompt",
-                        actorId
-                    }
-                }
-            });
-
-            // Stop normal reroll handling here — we’ll update stats on button click
-            return;
-        }
 		
 		// Detect Workbench’s Variant Hero Point Rules mode
 		const isWorkbenchActive = game.modules.get("xdy-pf2e-workbench")?.active;
@@ -895,19 +736,19 @@ Hooks.on("createChatMessage", async (message) => {
 			
 			if (hpRule !== "no") {
 				const messageContent = `
-					<h2>${LT.workbench.title()}</h2>
-					<p>${LT.workbench.warning()}</p>
-					<p>${LT.workbench.fixIntro()}</p>
+					<h2>Reroll Stats Blocked</h2>
+					<p>The setting in PF2e Workbench to use Variant Hero Point house rules is enabled and will cause the stats to be incorrect.</p>
+					<p>To fix this, you can either:</p>
 					<ol>
 						<li>Change the setting manually under <b>PF2e Workbench</b> > <b>Manage House Rule Settings</b> and set "Variant Hero Point house rules" to <b>Normal</b>.</li>
-						<li>${LT.workbench.step2()}</li>
+						<li>Disable ReRoll Stats.</li>
 					</ol>
 				`;
 
 				ChatMessage.create({
 					user: game.user.id,
 					content: messageContent,
-					speaker: { alias: LT.chat.speakerSingle() },
+					speaker: { alias: "Reroll Tracker" },
 				});
 				return;
 			}
@@ -920,24 +761,14 @@ Hooks.on("createChatMessage", async (message) => {
         const rerollResult = message.rolls[0]?.total;
         const originalRoll = actorData.originalRoll;
 
-        // Setup Colors for chat output
-        let betterColor = "";
-        let successColor = "";
-        let critColor = "";
-        let worseColor = "";
-        let sameColor = "";
-
         if (originalRoll !== null) {
-            if (rerollResult > originalRoll) { // Reroll is better
-                betterColor = "color: green; font-weight: bold;";
+            if (rerollResult > originalRoll) {
                 actorData.betterCount += 1;
                 DL(`Reroll is better than the original.`);
-            } else if (rerollResult < originalRoll) { // Reroll is worse
-                worseColor = "color: red; font-weight: bold;";
+            } else if (rerollResult < originalRoll) {
                 actorData.worseCount += 1;
                 DL(`Reroll is worse than the original.`);
-            } else { // Reroll is the same
-                sameColor = "color: blue; font-weight: bold;";
+            } else {
                 actorData.sameCount += 1;
                 DL(`Reroll is the same as the original.`);
             }
@@ -946,12 +777,10 @@ Hooks.on("createChatMessage", async (message) => {
             actorData.rerollCount += 1; 
 
             // Calculate and log success percentage based on outcome
-            if (outcome === "success") { // Success
-                successColor = "color: green; font-weight: bold;";
+            if (outcome === "success") {
                 actorData.successCount += 1;
                 DL(`Reroll was a success.`);
-            } else if (outcome === "criticalSuccess") { // Critical Success
-                critColor = "color: green; font-weight: bold;";
+            } else if (outcome === "criticalSuccess") {
                 actorData.critSuccessCount += 1;
                 DL(`Reroll was a critical success.`);
             } 
@@ -979,14 +808,14 @@ Hooks.on("createChatMessage", async (message) => {
 		if (outputToChat) {
 			// Prepare the chat message content
 			const messageContent = `
-				<h2>${LT.chat.actorHeader({ actorName: actor.name })}</h2>
+				<h2>Reroll Stats for ${actor.name}</h2>
 				<ul>
-					<li><strong>${LT.chat.rerollCountLabel()}</strong> ${actorData.rerollCount}</li>
-					<li style="${betterColor}"><strong>${LT.chat.betterResultsLabel()}</strong> ${actorData.betterCount} (${actorBetterPct}%)</li>
-					<li style="${worseColor}"><strong>${LT.chat.worseResultsLabel()}</strong> ${actorData.worseCount} (${actorWorsePct}%)</li>
-					<li style="${sameColor}"><strong>${LT.chat.sameResultsLabel()}</strong> ${actorData.sameCount} (${actorSamePct}%)</li>
-					<li style="${successColor}"><strong>${LT.chat.successPercentageLabel()}</strong> ${actorData.successCount + actorData.critSuccessCount} (${successPct}%)</li>
-					<li style="${critColor}"><strong>${LT.chat.criticalSuccessPercentageLabel()}</strong> ${actorData.critSuccessCount} (${critPct}%)</li>
+					<li><strong>Reroll Count:</strong> ${actorData.rerollCount}</li>
+					<li><strong>Better Results:</strong> ${actorData.betterCount} (${actorBetterPct}%)</li>
+					<li><strong>Worse Results:</strong> ${actorData.worseCount} (${actorWorsePct}%)</li>
+					<li><strong>Same Results:</strong> ${actorData.sameCount} (${actorSamePct}%)</li>
+					<li><strong>Reroll Sucess:</strong> ${actorData.successCount + actorData.critSuccessCount} (${successPct}%)</li>
+					<li><strong>Reroll Crit:</strong> ${actorData.critSuccessCount} (${critPct}%)</li>
 				</ul>
 			`;
 			
@@ -994,17 +823,9 @@ Hooks.on("createChatMessage", async (message) => {
 			ChatMessage.create({
 				user: game.user.id,
 				content: messageContent,
-				speaker: { alias: LT.chat.speakerSingle() },		
+				speaker: { alias: "Reroll Tracker" },		
 			});
 		}
-
-        // Setup Colors for chat output
-        betterColor = "";
-        successColor = "";
-        critColor = "";
-        worseColor = "";
-        sameColor = "";
-
     } else {
         DL("Original D20 roll detected (not a reroll).");
 		
@@ -1124,19 +945,19 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
 				
 				if (hpRule !== "no") {
 					const messageContent = `
-						<h2>${LT.workbench.title()}</h2>
-						<p>${LT.workbench.warning()}</p>
-						<p>${LT.workbench.fixIntro()}</p>
+						<h2>Reroll Stats Blocked</h2>
+						<p>The setting in PF2e Workbench to use Variant Hero Point house rules is enabled and will cause the stats to be incorrect.</p>
+						<p>To fix this, you can either:</p>
 						<ol>
 							<li>Change the setting manually under <b>PF2e Workbench</b> > <b>Manage House Rule Settings</b> and set "Variant Hero Point house rules" to <b>Normal</b>.</li>
-							<li>${LT.workbench.step2()}</li>
+							<li>Disable ReRoll Stats.</li>
 						</ol>
 					`;
 
 					ChatMessage.create({
 						user: game.user.id,
 						content: messageContent,
-						speaker: { alias: LT.chat.speakerSingle() },
+						speaker: { alias: "Reroll Tracker" },
 					});
 					return;
 				}
@@ -1188,14 +1009,14 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
 			DL(`outputToChat: ${outputToChat} | Actor Name: ${actor.name}`);
 			if (outputToChat) {
 				const messageContent = `
-					<h2>${LT.chat.actorHeader({ actorName: actor.name })}</h2>
+					<h2>Reroll Stats for ${actorName}</h2>
 					<ul>
-						<li><strong>${LT.chat.rerollCountLabel()}</strong> ${rerollCount}</li>
-						<li><strong>${LT.chat.betterResultsLabel()}</strong> ${betterCount} (${actorBetterPct}%)</li>
-						<li><strong>${LT.chat.worseResultsLabel()}</strong> ${worseCount} (${actorWorsePct}%)</li>
-						<li><strong>${LT.chat.sameResultsLabel()}</strong> ${sameCount} (${actorSamePct}%)</li>
-						<li><strong>${LT.chat.successPercentageLabel()}</strong> ${successCount + critSuccessCount} (${successPct}%)</li>
-						<li><strong>${LT.chat.criticalSuccessPercentageLabel()}</strong> ${critSuccessCount} (${critPct}%)</li>
+						<li><strong>Reroll Count:</strong> ${rerollCount}</li>
+						<li><strong>Better Results:</strong> ${betterCount} (${actorBetterPct}%)</li>
+						<li><strong>Worse Results:</strong> ${worseCount} (${actorWorsePct}%)</li>
+						<li><strong>Same Results:</strong> ${sameCount} (${actorSamePct}%)</li>
+						<li><strong>Reroll Sucess:</strong> ${successCount + critSuccessCount} (${successPct}%)</li>
+						<li><strong>Reroll Crit:</strong> ${critSuccessCount} (${critPct}%)</li>
 					</ul>
 				`;
 
@@ -1203,7 +1024,7 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
 				await ChatMessage.create({
 					user: game.user.id,
 					content: messageContent,
-					speaker: { alias: LT.chat.speakerSingle() },		
+					speaker: { alias: "Reroll Tracker" },		
 				});
 			}
         } else {
@@ -1216,62 +1037,4 @@ Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
         // Save data persistently
         await compileActorStatsToJournal();
     }
-});
-
-// Handle clicks on the no-outcome buttons in our special GM prompt
-Hooks.on("renderChatMessage", async (message, $html) => {
-	try {
-		// Only the GM should wire buttons, and only for our special prompt
-		if (!game.user?.isGM) return;
-		const flag = message?.flags?.[MODULE_NAME];
-		if (!flag || flag?.type !== "noOutcomePrompt") return;
-
-		$html.on("click", ".reroll-no-outcome-btn", async (ev) => {
-			ev.preventDefault();
-			ev.stopPropagation();
-
-			const btn = ev.currentTarget;
-			const choice = btn?.dataset?.choice;
-			const actorId = btn?.dataset?.actorId;
-			if (!choice || !actorId) { DL(2, "renderChatMessage(): missing choice/actorId"); return; }
-
-			try {
-				await _rrRecordNoOutcomeSelection({ actorId, choice });
-				// Disable all buttons after first click to enforce "ONE button"
-				$html.find(".reroll-no-outcome-btn").prop("disabled", true);
-			} catch (err) {
-				DL(3, `_rrRecordNoOutcomeSelection(): error ${err?.message || err}`, err);
-			}
-		});
-	} catch (err) {
-		DL(3, `renderChatMessage(): error ${err?.message || err}`, err);
-	}
-});
-
-Hooks.once("ready", async () => {
-    // Initialize rollDataByActor from game settings or as an empty object
-    rollDataByActor = game.settings.get(MODULE_NAME, "rollData") || {};
-    console.log(`%c${LOG_LABEL} Reroll Tracker ready!`, "color: Orange; font-weight: bold;");
-
-     try {
-		const api = {
-			displayActorStatsInChat,
-			compileActorStatsToJournal,
-			displayCombinedRerollStats,
-			deleteActorRollData,
-			deleteAllRerollStats,
-			openRerollEditor
-		};
-
-		// Expose the API via the module
-		const mod = game.modules.get("pf2e-reroll-stats");
-		if (mod) mod.api = api;
-
-		// Also attach to globalThis for easy access
-		globalThis.pf2eRerollStats = api;
-
-		console.log("PF2e ReRoll Stats || API exposed: use game.modules.get('pf2e-reroll-stats').api or pf2eRerollStats");
-	} catch (e) {
-		console.error(`PF2e ReRoll Stats || Failed to expose API: ${e?.message || e}`);
-	}
 });

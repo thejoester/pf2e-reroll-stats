@@ -1,0 +1,24 @@
+{
+  "name": "pf2e_reroll_stats",
+  "version": "1.0.0",
+  "description": "A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thejoester/pf2e-reroll-stats.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thejoester/pf2e-reroll-stats/issues"
+  },
+  "homepage": "https://github.com/thejoester/pf2e-reroll-stats#readme",
+  "type": "module",
+  "devDependencies": {
+    "@foundryvtt/foundryvtt-cli": "^3.0.0"
+  }
+}

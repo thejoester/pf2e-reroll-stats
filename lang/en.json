@@ -1,0 +1,76 @@
+{
+    "reroll": {
+
+        "save": "Save",
+        "selectActor": "- Select Actor -",
+        "journalTitle": "Reroll Stats",
+        "deleteSelected": "This will DELETE all roll data for the selected token(s). This CANNOT be undone!",
+        "deleteAll": "This will DELETE all roll data for ALL characters! This CANNOT be undone!",
+
+        "settings": {
+            "rollDataName": "Reroll Tracker Data",
+            "rollDataHint": "Stores reroll tracking data for each actor.",
+            "outputToChatName": "Output actor stats to chat after reroll?",
+            "outputToChatHint": "Will output an actor's reroll stats in chat after each reroll.",
+            "ignoreMinionName": "Ignore Minions",
+            "ignoreMinionHint": "Ignore rolls from minions (companions, summons, etc).",
+            "debugLevelName": "Debug Level",
+            "debugLevelHint": "Set the debug level for logging. None disables all logging, All includes info, warnings, and errors.",
+            "debugLevelNone": "None",
+            "debugLevelErrors": "Errors",
+            "debugLevelWarnings": "Warnings",
+            "debugLevelAll": "All"
+        },
+
+        "dialog": {
+            "titleConfirm": "Confirmation",
+            "areYouSure": "Are you sure?",
+            "yes": "Yes",
+            "no": "No",
+            "editTitle": "Edit Reroll Data",
+            "saveChanges": "Save Changes"
+        },
+                
+        "notifications": {
+            "noTokenSelected": "No token selected. Please select a token.",
+            "selectedTokenHasNoActor": "Selected token has no associated actor.",
+            "noTokensSelected": "No tokens selected. Please select one or more tokens.",
+            "tokenHasNoActor": "Token has no associated actor!",
+            "noRerollDataForActor": "No reroll data found for actor: {actorName}",
+            "noRollDataForActor": "No roll data found for actor: {actorName}",
+            "deletedActorCount": "{count} actor(s) had their roll data deleted.",
+            "noRollDataToDeleteSelected": "No roll data found to delete for the selected actors.",
+            "noActorsWithRerollData": "No actors with reroll data found.",
+            "countsDoNotAddUp": "Error: Reroll count data does not add up correctly!",
+            "successCountsExceedBetter": "Error: Success or Crit Success count cannot exceed Better Rolls count!",
+            "saved": "Reroll data saved successfully."        
+        },
+
+        "chat":{
+            "speakerSingle": "Reroll Tracker",
+            "speakerCombined": "Combined Reroll Tracker",
+            "actorHeader": "Reroll Stats for {actorName}",
+            "totalsHeader": "Reroll Stats totals",
+            "rerollCountLabel": "Reroll Count:",
+            "betterResultsLabel": "Better Results:",
+            "worseResultsLabel": "Worse Results:",
+            "sameResultsLabel": "Same Results:",
+            "successPercentageLabel": "Reroll Success:",
+            "criticalSuccessPercentageLabel": "Reroll Crit:",
+            "totalRerollCountLabel": "Total Reroll Count:",
+            "totalBetterResultsLabel": "Total Better Results:",
+            "totalWorseResultsLabel": "Total Worse Results:",
+            "totalSameResultsLabel": "Total Same Results:",
+            "totalSuccessResultsLabel": "Success Percentage:",
+            "totalCriticalResultsLabel": "Critical Success Percentage:"
+        },
+
+        "workbench": {
+            "title": "Reroll Stats Blocked",
+            "warning": "The setting in PF2e Workbench to use Variant Hero Point house rules is enabled and will cause the stats to be incorrect.",
+            "fixIntro": "To fix this, you can either:",
+            "step1": "Change the setting manually under <b>PF2e Workbench</b> and set \"Variant Hero Point house rules\" to <b>Normal</b>.",
+            "step2": "Disable ReRoll Stats."
+        }
+    }
+}

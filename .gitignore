@@ -1,1 +1,38 @@
-pf2e_reroll_stats.zip
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Build/release artifacts
+dist/
+coverage/
+*.zip
+*.tgz
+_build/*.js.map
+_build/*.d.ts
+
+# FoundryVTT packs
+# Keep extracted JSON source in Git so CI can compile it
+# Ignore compiled .db so they’re only produced in release
+packs/*.db
+packs/*.db-journal
+# Ensure we DO keep source
+!packs/_source/
+!packs/_source/**
+# If you also generate icons or misc in packs, keep those too
+!packs/**/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE/editor
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo

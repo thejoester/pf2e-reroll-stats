@@ -1,0 +1,31 @@
+{
+  "name": "Delete ALL Reroll Stats",
+  "type": "script",
+  "_id": "sds2cJpvPZE6tZz2",
+  "author": "sDmTHDFOKZoe85XE",
+  "img": "icons/magic/death/bones-crossed-orange.webp",
+  "scope": "global",
+  "command": "/*\n\nThis macro will DELETE ALL REROLL DATA FOR ALL ACTORS \n\nIf you want to just reset all stats to 0, then usee the Reset macro instead. \n\n!!! CAN NOT BE UNDONE !!!\n\n*/\n\ndeleteAllRerollStats();",
+  "folder": null,
+  "sort": 400000,
+  "ownership": {
+    "default": 0,
+    "sDmTHDFOKZoe85XE": 3
+  },
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "coreVersion": "12.331",
+    "systemId": "pf2e",
+    "systemVersion": "6.7.2",
+    "createdTime": 1733799994023,
+    "modifiedTime": 1734000358233,
+    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+  },
+  "_key": "!macros!sds2cJpvPZE6tZz2"
+}
