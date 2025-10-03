@@ -14,7 +14,7 @@
       "flags": {}
     }
   ],
-  "scripts": [
+  "esmodules": [
     "scripts/reroll.js",
     "scripts/localization.js"
   ],

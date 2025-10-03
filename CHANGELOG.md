@@ -1,6 +1,8 @@
 # Changelog
 
-
+## [1.4.1] - 2025-10-03
+### Fixed
+- fixed error in module.json preventing module to function. 
 
 ## [1.4.0] - 2025-10-03
 ### Added
