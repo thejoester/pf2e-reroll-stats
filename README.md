@@ -9,7 +9,14 @@ A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls.
 ### How To Use
 The module will automatically track re-rolls made by players and add them to a Journal entry in the base journal folder named "ReRoll Stats". 
 
-![image](https://github.com/user-attachments/assets/6a8e408c-7173-4e46-8539-5424089b8060)
+![image](https://github.com/user-attachments/assets/6a8e408c-7173-4e46-8539-5424089b8060) 
+
+If enabled (default) in settings, outputs color coded message to chat
+
+<img width="293" height="626" alt="image" src="https://github.com/user-attachments/assets/44239794-5306-4de5-8d02-d22e42f7c91c" /> <img width="293" height="625" alt="image" src="https://github.com/user-attachments/assets/2a9617ce-0273-4d31-98be-57fe36efff4c" /> <img width="293" height="624" alt="image" src="https://github.com/user-attachments/assets/3e78d9c3-64e9-4b2d-bd67-93bed9a988c4" />
+
+If a roll with no outcome is detected (for example rolled straight from character sheet), will prompt GM to specify result
+<img width="296" height="432" alt="image" src="https://github.com/user-attachments/assets/26ff2d9c-606b-4ccd-b342-86fb7d83cdcd" />
 
 ## Macros
 The following Macros are in the "ReRoll Stats Macros" Compendium:
