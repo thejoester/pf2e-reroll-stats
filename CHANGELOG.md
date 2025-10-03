@@ -1,5 +1,7 @@
 # Changelog
 
+
+
 ## [1.4.0] - 2025-10-03
 ### Added
 - When re-roll without outcome is detected, will prompt GM to choose outcome. 

@@ -62,7 +62,12 @@
             "totalWorseResultsLabel": "Total Worse Results:",
             "totalSameResultsLabel": "Total Same Results:",
             "totalSuccessResultsLabel": "Success Percentage:",
-            "totalCriticalResultsLabel": "Critical Success Percentage:"
+            "totalCriticalResultsLabel": "Critical Success Percentage:",
+            "betterCritbtn": "Crit Success",
+            "betterSuccessBtn": "Better Success",
+            "betterFailBtn": "Better Fail",
+            "worseBtn": "Worse",
+            "sameBtn": "Same"
         },
 
         "workbench": {
