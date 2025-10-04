@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.4.3] - 2025-10-04
+### Added
+- Added French (fr) localization. Credit: [Rectulo](https://github.com/rectulo)
+
 ## [1.4.2] - 2025-10-03
 ### Changed
 - Updated en.json

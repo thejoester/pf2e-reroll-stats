@@ -1,12 +1,96 @@
 import { LT } from "./localization.js";
 // Log to Console
-console.log("%cPF2e ReRoll Stats || reroll.js loaded", "color: orange; font-weight: bold;");
+console.log("%cPF2e ReRoll Stats | reroll.js loaded", "color: orange; font-weight: bold;");
 
 // Namespace for the module
 const MODULE_NAME = "pf2e-reroll-stats";
 
 // Label to append to the beginning of logs
-const LOG_LABEL = "PF2e ReRoll Stats ||";
+const LOG_LABEL = "PF2e ReRoll Stats |";
+
+// Function for debugging and logging
+export function DL(intLogType, stringLogMsg, objObject = null) {
+	// Handle the case where the first argument is a string
+	if (typeof intLogType === "string") {
+		objObject = stringLogMsg; // Shift arguments
+		stringLogMsg = intLogType;
+		intLogType = 1; // Default log type to 'all'
+	}
+
+	let debugLevel = "none";
+    try {
+        const key = `${MODULE_NAME}.debugLevel`;
+        if (game?.settings?.settings?.has?.(key)) {
+            debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
+        }
+    } catch (e) {
+        // ignore – fall back to "none"
+    }
+
+	// Map debugLevel setting to numeric value for comparison
+	const levelMap = {
+		"none": 4,
+		"error": 3,
+		"warn": 2,
+		"all": 1
+	};
+
+	const currentLevel = levelMap[debugLevel] || 4; // Default to 'none' if debugLevel is undefined
+
+	// Check if the log type should be logged based on the current debug level
+	if (intLogType < currentLevel) return;
+
+	// Capture stack trace to get file and line number
+	const stack = new Error().stack.split("\n");
+	let fileInfo = "Unknown Source";
+	for (let i = 2; i < stack.length; i++) {
+		const line = stack[i].trim();
+		const fileInfoMatch = line.match(/(\/[^)]+):(\d+):(\d+)/); // Match file path and line number
+		if (fileInfoMatch) {
+			const [, filePath, lineNumber] = fileInfoMatch;
+			const fileName = filePath.split("/").pop(); // Extract just the file name
+			// Ensure the file is one of the allowed files
+			const allowedFiles = ["FormulaSearch.js", "LevelUp.js", "PowerfulAlchemy.js", "QuickAlchemy.js", "settings.js", "VialSearch.js"];
+			if (allowedFiles.includes(fileName)) {
+				fileInfo = `${fileName}:${lineNumber}`;
+				break;
+			}
+		}
+	}
+
+	// Prepend the file and line info to the log message
+	const formattedLogMsg = `[${fileInfo}] ${stringLogMsg}`;
+	
+	if (objObject) {
+		switch (intLogType) {
+			case 1: // Info/Log (all)
+				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;", objObject);
+				break;
+			case 2: // Warning
+				console.log(`%c${LOG_LABEL} | WARNING: ${formattedLogMsg}`, "color: yellow; font-weight: bold;", objObject);
+				break;
+			case 3: // Critical/Error
+				console.log(`%c${LOG_LABEL} | ERROR: ${formattedLogMsg}`, "color: red; font-weight: bold;", objObject);
+				break;
+			default:
+				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;", objObject);
+		}
+	} else {
+		switch (intLogType) {
+			case 1: // Info/Log (all)
+				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;");
+				break;
+			case 2: // Warning
+				console.log(`%c${LOG_LABEL} | WARNING: ${formattedLogMsg}`, "color: yellow; font-weight: bold;");
+				break;
+			case 3: // Critical/Error
+				console.log(`%c${LOG_LABEL} | ERROR: ${formattedLogMsg}`, "color: red; font-weight: bold;");
+				break;
+			default:
+				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;");
+		}
+	}
+}
 
 // Global variable for tracking roll data by actor
 let rollDataByActor = {};
@@ -183,11 +267,7 @@ async function _rrRecordNoOutcomeSelection({ actorId, choice }) {
 	}
 }
 
-/*
-	Displays a confirmation dialog with a custom message.
-	*Requires message, example: "This will delete all data." 
-	*returns {Promise<boolean>} - Resolves to `true` if the user confirms, `false` otherwise.
- */
+// Helper to show a confirmation dialog and return a promise that resolves to true/false
 async function showConfirmationDialog(message) {
   return new Promise((resolve) => {
     new Dialog({
@@ -208,97 +288,7 @@ async function showConfirmationDialog(message) {
   });
 }
 
-// Function for debugging
-export function DL(intLogType, stringLogMsg, objObject = null) {
-	// Handle the case where the first argument is a string
-	if (typeof intLogType === "string") {
-		objObject = stringLogMsg; // Shift arguments
-		stringLogMsg = intLogType;
-		intLogType = 1; // Default log type to 'all'
-	}
-
-	let debugLevel = "none";
-    try {
-        const key = `${MODULE_NAME}.debugLevel`;
-        if (game?.settings?.settings?.has?.(key)) {
-            debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
-        }
-    } catch (e) {
-        // ignore – fall back to "none"
-    }
-
-	// Map debugLevel setting to numeric value for comparison
-	const levelMap = {
-		"none": 4,
-		"error": 3,
-		"warn": 2,
-		"all": 1
-	};
-
-	const currentLevel = levelMap[debugLevel] || 4; // Default to 'none' if debugLevel is undefined
-
-	// Check if the log type should be logged based on the current debug level
-	if (intLogType < currentLevel) return;
-
-	// Capture stack trace to get file and line number
-	const stack = new Error().stack.split("\n");
-	let fileInfo = "Unknown Source";
-	for (let i = 2; i < stack.length; i++) {
-		const line = stack[i].trim();
-		const fileInfoMatch = line.match(/(\/[^)]+):(\d+):(\d+)/); // Match file path and line number
-		if (fileInfoMatch) {
-			const [, filePath, lineNumber] = fileInfoMatch;
-			const fileName = filePath.split("/").pop(); // Extract just the file name
-			// Ensure the file is one of the allowed files
-			const allowedFiles = ["FormulaSearch.js", "LevelUp.js", "PowerfulAlchemy.js", "QuickAlchemy.js", "settings.js", "VialSearch.js"];
-			if (allowedFiles.includes(fileName)) {
-				fileInfo = `${fileName}:${lineNumber}`;
-				break;
-			}
-		}
-	}
-
-	// Prepend the file and line info to the log message
-	const formattedLogMsg = `[${fileInfo}] ${stringLogMsg}`;
-	
-	if (objObject) {
-		switch (intLogType) {
-			case 1: // Info/Log (all)
-				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;", objObject);
-				break;
-			case 2: // Warning
-				console.log(`%c${LOG_LABEL} | WARNING: ${formattedLogMsg}`, "color: yellow; font-weight: bold;", objObject);
-				break;
-			case 3: // Critical/Error
-				console.log(`%c${LOG_LABEL} | ERROR: ${formattedLogMsg}`, "color: red; font-weight: bold;", objObject);
-				break;
-			default:
-				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;", objObject);
-		}
-	} else {
-		switch (intLogType) {
-			case 1: // Info/Log (all)
-				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;");
-				break;
-			case 2: // Warning
-				console.log(`%c${LOG_LABEL} | WARNING: ${formattedLogMsg}`, "color: yellow; font-weight: bold;");
-				break;
-			case 3: // Critical/Error
-				console.log(`%c${LOG_LABEL} | ERROR: ${formattedLogMsg}`, "color: red; font-weight: bold;");
-				break;
-			default:
-				console.log(`%c${LOG_LABEL} | ${formattedLogMsg}`, "color: orange; font-weight: bold;");
-		}
-	}
-}
-
-/*
-	Function that checks if an actor is valid for reroll tracking.
- 
-	An actor is considered valid if it meets the following conditions:
-	1. The actor is of type 'character'.
-	2. Unless LT.settings.ignoreMinionName() is disabled in settings, ensure actor does not have the 'minion' trait in its list of traits.
-*/
+// Checks if an actor is valid for reroll tracking, Returns true if valid, false otherwise
 function isValidActorForRerollTracking(actor) {
     // Check if the actor is a character
     const isCharacter = actor.type === "character";
@@ -570,6 +560,7 @@ async function deleteActorRollData() {
         return;
     }
 
+    // Confirm deletion
 	const confirmation = await showConfirmationDialog(LT.deleteSelected());
 	if (confirmation){
 		let deletedCount = 0;
@@ -776,9 +767,7 @@ async function openRerollEditor() {
     dialog.render(true);
 }
 
-/*
-	Hook: createChatMessage
-*/
+// Hook into chat message creation to track d20 rolls
 Hooks.on("createChatMessage", async (message) => {
 
     // Only process for GM
@@ -1019,6 +1008,7 @@ Hooks.on("createChatMessage", async (message) => {
     
 });
 
+// Hook into chat message updates to catch pf2e-toolbelt targetHelper saves
 Hooks.on("updateChatMessage", async (message, updateData, options, userId) => {
     
     // Check if "pf2e-toolbelt" is active - otherwise exit hook
@@ -1248,6 +1238,7 @@ Hooks.on("renderChatMessage", async (message, $html) => {
 	}
 });
 
+// On ready, load existing roll data from settings
 Hooks.once("ready", async () => {
     // Initialize rollDataByActor from game settings or as an empty object
     rollDataByActor = game.settings.get(MODULE_NAME, "rollData") || {};
