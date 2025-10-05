@@ -1,0 +1,75 @@
+{
+  "reroll": {
+    "save": "Enregistrer",
+    "selectActor": "- Sélectionner l'acteur -",
+    "journalTitle": "Statistiques de relance",
+    "deleteSelected": "Ceci SUPPRIMERA toutes les données de jet du ou des jetons sélectionnés. Cette opération est IRRÉVERSIBLE !",
+    "deleteAll": "Ceci SUPPRIMERA toutes les données de jet de TOUS les personnages ! Cette opération est IRRÉVERSIBLE !",
+    "settings": {
+      "rollDataName": "Relancer les données du compteur",
+      "rollDataHint": "Stocke les données de relance pour chaque acteur.",
+      "outputToChatName": "Afficher les statistiques des acteurs dans la conversation après la relance ?",
+      "outputToChatHint": "Affichera les statistiques de relance d'un acteur dans la conversation après chaque relance.",
+      "ignoreMinionName": "Ignorer les sbires",
+      "ignoreMinionHint": "Ignore les jets des sbires (compagnons, invocations, etc.).",
+      "debugLevelName": "Niveau de débogage",
+      "debugLevelHint": "Définissez le niveau de débogage pour la journalisation. 'Aucun' désactive toute journalisation. 'Tout' inclut les informations, les avertissements et les erreurs.",
+      "debugLevelNone": "Aucun",
+      "debugLevelErrors": "Erreurs",
+      "debugLevelWarnings": "Avertissements",
+      "debugLevelAll": "Tout"
+    },
+    "dialog": {
+      "titleConfirm": "Confirmation",
+      "areYouSure": "Êtes-vous certain ?",
+      "yes": "Oui",
+      "no": "Non",
+      "editTitle": "Modifier les données de relance",
+      "saveChanges": "Enregistrer les modifications"
+    },
+    "notifications": {
+      "noTokenSelected": "Aucun jeton sélectionné. Veuillez sélectionner un jeton.",
+      "selectedTokenHasNoActor": "Le jeton sélectionné n'a aucun acteur associé.",
+      "noTokensSelected": "Aucun jeton sélectionné. Veuillez en sélectionner un ou plusieurs.",
+      "tokenHasNoActor": "Aucun acteur n'est associé au jeton !",
+      "noRerollDataForActor": "Aucune donnée de relance n'a été trouvée pour l'acteur : {actorName}",
+      "noRollDataForActor": "Aucune donnée de lancer n'a été trouvée pour l'acteur : {actorName}",
+      "deletedActorCount": "{count} acteur(s) ont vu leurs données de lancer supprimées.",
+      "noRollDataToDeleteSelected": "Aucune donnée de lancer à supprimer n'a été trouvée pour les acteurs sélectionnés.",
+      "noActorsWithRerollData": "Aucun acteur avec des données relancées n'a été trouvé.",
+      "countsDoNotAddUp": "Erreur : les données du nombre de relances ne s'additionnent pas correctement !",
+      "successCountsExceedBetter": "Erreur : le nombre de succès ou de succès critiques ne peut pas dépasser le nombre de meilleurs lancers !",
+      "saved": "Les données de relance ont été enregistrées avec succès."
+    },
+    "chat": {
+      "speakerSingle": "Suivi des relances",
+      "speakerCombined": "Suivi de relance combiné",
+      "actorHeader": "Statistiques de relance pour {actorName}",
+      "totalsHeader": "Totaux de statistiques de relance",
+      "rerollCountLabel": "Nombre de relances :",
+      "betterResultsLabel": "Meilleurs résultats :",
+      "worseResultsLabel": "Pires résultats :",
+      "sameResultsLabel": "Mêmes résultats :",
+      "successPercentageLabel": "Réussite de la relance :",
+      "criticalSuccessPercentageLabel": "Critique sur relance :",
+      "totalRerollCountLabel": "Nombre total de relances :",
+      "totalBetterResultsLabel": "Total des meilleurs résultats :",
+      "totalWorseResultsLabel": "Total de pires résultats :",
+      "totalSameResultsLabel": "Total des mêmes résultats :",
+      "totalSuccessResultsLabel": "Pourcentage de succès :",
+      "totalCriticalResultsLabel": "Pourcentage de succès critique :",
+      "betterCritbtn": "Succès critique",
+      "betterSuccessBtn": "Meilleur succès",
+      "betterFailBtn": "Meilleur échec",
+      "worseBtn": "Pire",
+      "sameBtn": "Même"
+    },
+    "workbench": {
+      "title": "Statistiques de relance bloquées",
+      "warning": "Le paramètre dans PF2e Workbench pour utiliser les règles maison de la variante de points d'héroïsme est activé et entraînera des statistiques incorrectes.",
+      "fixIntro": "Pour résoudre ce problème, vous pouvez soit :",
+      "step1": "Modifier le paramètre de <b>PF2e Workbench</b> et passer 'Règles maison Variante de points d'héroïsme' sur <b>Normal</b>.",
+      "step2": "Désactiver les statistiques de relace."
+    }
+  }
+}
