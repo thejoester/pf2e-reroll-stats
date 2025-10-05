@@ -22,14 +22,12 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          # Ensure the Foundry CLI is present (dev dep in package.json)
           npx --no-install @foundryvtt/foundryvtt-cli --version
 
       - name: Determine version from tag
         id: get_version
         run: |
           RAW="${{ github.event.release.tag_name }}"
-          # Strip a leading 'v' if present (v0.3.1 -> 0.3.1)
           echo "version=${RAW#v}" >> "$GITHUB_OUTPUT"
 
       - name: Validate module.json is valid JSON
@@ -37,32 +35,34 @@ jobs:
 
       - name: Fail early if pack source is missing
         run: |
-          # Look for any packs/*/_source/*.json
           if ! find packs -type d -name "_source" -print -quit | grep -q . ; then
             echo "No pack sources found. Expected at least one: packs/<pack-name>/_source/*.json"
             exit 1
           fi
-
-          # Optional: show what was found
           echo "Found the following _source folders:"
           find packs -type d -name "_source" -print
 
-      # Compile packs from packs/_source -> packs/*.db (your script)
       - name: Compile packs
-        run: |
-          node ./_build/compile-all-packs.mjs ./packs
+        run: node ./_build/compile-all-packs.mjs ./packs
 
-      # Update module.json: version + URLs that point to this release
       - name: Update module.json for release
         run: |
+          set -e
           VERSION="${{ steps.get_version.outputs.version }}"
           OWNER_REPO="${{ github.repository }}"
           TAG="${{ github.event.release.tag_name }}"
+          IS_PRERELEASE="${{ github.event.release.prerelease }}"
 
-          # Use jq to set fields (install jq)
           sudo apt-get update && sudo apt-get install -y jq
 
-          MANIFEST_URL="https://github.com/${OWNER_REPO}/releases/latest/download/module.json"
+          # Use tag-specific manifest for prereleases (since /latest ignores them),
+          # and /latest for stable releases.
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            MANIFEST_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/module.json"
+          else
+            MANIFEST_URL="https://github.com/${OWNER_REPO}/releases/latest/download/module.json"
+          fi
+
           DOWNLOAD_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/pf2e_reroll_stats.zip"
 
           jq --arg v "$VERSION" \
@@ -74,15 +74,12 @@ jobs:
              module.json > module.json.tmp
 
           mv module.json.tmp module.json
-
           echo "module.json updated:"
           cat module.json
 
-      # Create the distributable zip (exclude dev junk)
       - name: Build zip
         run: |
           ZIPNAME="pf2e_reroll_stats.zip"
-          # Create list file for zip to avoid accidental includes
           cat > zip-include.txt << 'EOF'
           assets
           lang
@@ -95,7 +92,6 @@ jobs:
           CHANGELOG.md
           EOF
 
-          # Use zip with excludes to keep it clean
           zip -r "$ZIPNAME" -@ < zip-include.txt \
             -x "node_modules/*" \
                "packs/**/_source/*" \
@@ -108,11 +104,9 @@ jobs:
 
           echo "Created $ZIPNAME"
 
-      # Update the GitHub release assets (module.json + zip)
       - name: Attach assets to GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          # We are updating the *existing* release that triggered the workflow
           allowUpdates: true
           artifactErrorsFailBuild: true
           replacesArtifacts: true
@@ -123,10 +117,11 @@ jobs:
           draft: ${{ github.event.release.draft }}
           prerelease: ${{ github.event.release.prerelease }}
 
-      # Publish to FoundryVTT package index (skip for pre-releases)
+      # Only publish stable releases to the Foundry index.
+      # Use the /latest manifest so Foundry update checks always pull the newest stable.
       - name: Publish to FoundryVTT Package Index
         if: ${{ !github.event.release.prerelease }}
         uses: cs96and/FoundryVTT-release-package@v1
         with:
           package-token: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}
-          manifest-url: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/module.json
+          manifest-url: https://github.com/${{ github.repository }}/releases/latest/download/module.json
