@@ -2,7 +2,9 @@
 
 ## [1.4.3] - 2025-10-04
 ### Added
-- Added French (fr) localization. Credit: [Rectulo](https://github.com/rectulo)
+- Added French (fr) localization. Credit: [Rectulo](https://github.com/rectulo)!
+### Changed
+- Reworked percentage calculations to avoid division by zero errors.
 
 ## [1.4.2] - 2025-10-03
 ### Changed
