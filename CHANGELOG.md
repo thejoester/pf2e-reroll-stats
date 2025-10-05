@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.4] - 2025-10-05
+### Fixed
+- **Localization:**
+    - Fixed typo in en.json and fr.json. 
+
 ## [1.4.3] - 2025-10-04
 ### Added
 - Added French (fr) localization. Credit: [Rectulo](https://github.com/rectulo)!
