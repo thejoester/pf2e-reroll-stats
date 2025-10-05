@@ -50,7 +50,7 @@ export function DL(intLogType, stringLogMsg, objObject = null) {
 			const [, filePath, lineNumber] = fileInfoMatch;
 			const fileName = filePath.split("/").pop(); // Extract just the file name
 			// Ensure the file is one of the allowed files
-			const allowedFiles = ["FormulaSearch.js", "LevelUp.js", "PowerfulAlchemy.js", "QuickAlchemy.js", "settings.js", "VialSearch.js"];
+			const allowedFiles = ["localization.js", "reroll.js"];
 			if (allowedFiles.includes(fileName)) {
 				fileInfo = `${fileName}:${lineNumber}`;
 				break;
@@ -351,7 +351,7 @@ function displayActorStatsInChat() {
     const { rerollCount, betterCount, worseCount, sameCount, successCount, critSuccessCount } = actorData;
 	
 	// Calculate percentages
-	const actorBetterPct = Math.round((actorData.betterCount / actorData.rerollCount) * 100);
+    const actorBetterPct = actorData.rerollCount > 0 ? Math.round((actorData.betterCount / actorData.rerollCount) * 100) : 0;
 	const actorWorsePct = Math.round((actorData.worseCount / actorData.rerollCount) * 100);
 	const actorSamePct = Math.round((actorData.sameCount / actorData.rerollCount) * 100);
 	const actorSuccessPct = Math.round((actorData.successCount / actorData.rerollCount) * 100);
@@ -405,11 +405,11 @@ async function compileActorStatsToJournal() {
         if (!actor) continue;
 
 		// Calculate percentages
-		actorBetterPct = Math.round((stats.betterCount / stats.rerollCount) * 100);
-		actorWorsePct = Math.round((stats.worseCount / stats.rerollCount) * 100);
-		actorSamePct = Math.round((stats.sameCount / stats.rerollCount) * 100);
-		actorSuccessPct = Math.round(((stats.successCount + stats.critSuccessCount) / stats.rerollCount) * 100);
-		actorCritPct = Math.round((stats.critSuccessCount / stats.rerollCount) * 100);
+        actorBetterPct = stats.rerollCount > 0 ? Math.round((stats.betterCount / stats.rerollCount) * 100) : "N/A";
+        actorWorsePct = stats.rerollCount > 0 ? Math.round((stats.worseCount / stats.rerollCount) * 100) : "N/A";
+        actorSamePct = stats.rerollCount > 0 ? Math.round((stats.sameCount / stats.rerollCount) * 100) : "N/A";
+        actorSuccessPct = stats.rerollCount > 0 ? Math.round(((stats.successCount + stats.critSuccessCount) / stats.rerollCount) * 100) : "N/A";
+        actorCritPct = stats.rerollCount > 0 ? Math.round((stats.critSuccessCount / stats.rerollCount) * 100) : "N/A";
 
         journalContent += `
             <h2>${actor.name}</h2>
@@ -511,12 +511,12 @@ function displayCombinedRerollStats() {
     let totalCritSuccessCount = 0;
 
     for (const stats of Object.values(rollDataByActor)) {
-        totalRerollCount += stats.rerollCount;
-        totalBetterCount += stats.betterCount;
-        totalWorseCount += stats.worseCount;
-        totalSameCount += stats.sameCount;
-        totalSuccessCount += stats.successCount;
-        totalCritSuccessCount += stats.critSuccessCount;
+        totalRerollCount += stats.rerollCount || 0;
+        totalBetterCount += stats.betterCount || 0;
+        totalWorseCount += stats.worseCount || 0;
+        totalSameCount += stats.sameCount || 0;
+        totalSuccessCount += stats.successCount || 0;
+        totalCritSuccessCount += stats.critSuccessCount || 0;
     }
 
     // Calculate success percentages
@@ -698,7 +698,7 @@ async function openRerollEditor() {
 
                 if (rollDataByActor[selectedActorId]) {
                     const actorData = rollDataByActor[selectedActorId];
-                    actorData[field] = (actorData[field] || 0) + change;
+                    actorData[field] = Math.max(0, (actorData[field] || 0) + change);
                     html.find(`#${field}`).text(actorData[field]);
                 }
             });
@@ -710,25 +710,41 @@ async function openRerollEditor() {
                 if (rollDataByActor[selectedActorId]) {
 					const actorData = rollDataByActor[selectedActorId];
 					
-					// First, make sure the values add up mathematically
-					if (
-						(actorData.betterCount || 0) + 
-						(actorData.worseCount || 0) + 
-						(actorData.sameCount || 0) !== 
-						(actorData.rerollCount || 0)
-					) {
-						ui.notifications.error(LT.notifications.countsDoNotAddUp());
-						return;
-					}
-					
-					// Check if successCount or critSuccessCount is greater than betterRolls
-					if (
-						(actorData.successCount || 0) > (actorData.betterCount || 0) || 
-						(actorData.critSuccessCount || 0) > (actorData.betterCount || 0)
-					) {
-						ui.notifications.error(LT.notifications.successCountsExceedBetter());
-						return;
-					}
+                    // First, make sure the values add up mathematically
+                    if (
+                        (actorData.betterCount || 0) + 
+                        (actorData.worseCount || 0) + 
+                        (actorData.sameCount || 0) !== 
+                        (actorData.rerollCount || 0)
+                    ) {
+                        ui.notifications.error(LT.notifications.countsDoNotAddUp());
+                        return;
+                    }
+
+                    // Ensure no counts are negative
+                    const fieldsToCheck = [
+                        "rerollCount",
+                        "betterCount",
+                        "worseCount",
+                        "sameCount",
+                        "successCount",
+                        "critSuccessCount"
+                    ];
+                    for (const field of fieldsToCheck) {
+                        if ((actorData[field] || 0) < 0) {
+                            ui.notifications.error(LT.notifications.negativeCountsNotAllowed());
+                            return;
+                        }
+                    }
+                    
+                    // Check if successCount or critSuccessCount is greater than betterRolls
+                    if (
+                        (actorData.successCount || 0) > (actorData.betterCount || 0) || 
+                        (actorData.critSuccessCount || 0) > (actorData.betterCount || 0)
+                    ) {
+                        ui.notifications.error(LT.notifications.successCountsExceedBetter());
+                        return;
+                    }
 					
 					// prompt for confirmation
                     const confirmed = await Dialog.confirm({
@@ -1226,7 +1242,7 @@ Hooks.on("renderChatMessage", async (message, $html) => {
 			if (!choice || !actorId) { DL(2, "renderChatMessage(): missing choice/actorId"); return; }
 
 			try {
-				await _rrRecordNoOutcomeSelection({ actorId, choice });
+    console.log(`%c${LOG_LABEL} Reroll Tracker ready!`, "color: orange; font-weight: bold;");
 				// Disable all buttons after first click to enforce "ONE button"
 				$html.find(".reroll-no-outcome-btn").prop("disabled", true);
 			} catch (err) {
@@ -1261,7 +1277,6 @@ Hooks.once("ready", async () => {
 		// Also attach to globalThis for easy access
 		globalThis.pf2eRerollStats = api;
 
-		console.log("PF2e ReRoll Stats || API exposed: use game.modules.get('pf2e-reroll-stats').api or pf2eRerollStats");
 	} catch (e) {
 		console.error(`PF2e ReRoll Stats || Failed to expose API: ${e?.message || e}`);
 	}
