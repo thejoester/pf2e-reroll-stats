@@ -58,7 +58,7 @@
       "totalSameResultsLabel": "Total des mêmes résultats :",
       "totalSuccessResultsLabel": "Pourcentage de succès :",
       "totalCriticalResultsLabel": "Pourcentage de succès critique :",
-      "betterCritbtn": "Succès critique",
+      "betterCritBtn": "Succès critique",
       "betterSuccessBtn": "Meilleur succès",
       "betterFailBtn": "Meilleur échec",
       "worseBtn": "Pire",

@@ -59,7 +59,7 @@
             "totalSameResultsLabel": "Total Same Results:",
             "totalSuccessResultsLabel": "Success Percentage:",
             "totalCriticalResultsLabel": "Critical Success Percentage:",
-            "betterCritbtn": "Crit Success",
+            "betterCritBtn": "Crit Success",
             "betterSuccessBtn": "Better Success",
             "betterFailBtn": "Better Fail",
             "worseBtn": "Worse",
