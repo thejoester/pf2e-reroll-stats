@@ -1159,6 +1159,9 @@ Hooks.on("createChatMessage", async (message) => {
 
             // Stop normal reroll handling here — we’ll update stats on button click
             return;
+        } else {
+            DL(`Reroll has outcome '${context.outcome}' — processing normally.`);
+            await handleRerollEvent(actor, originalRoll, rerollResult, context.outcome);
         }
 
     } else {
