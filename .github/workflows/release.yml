@@ -11,116 +11,89 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Use Node.js 22 (LTS)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 18
 
-      - name: Install dependencies
-        run: |
-          npm ci
-          npx --no-install @foundryvtt/foundryvtt-cli --version
-
-      - name: Determine version from tag
+      - name: Extract Version From Tag
         id: get_version
+        uses: battila7/get-version-action@v2
+
+      # Use tagged manifest for prerelease; latest for stable
+      - name: Set manifest URL for channel (stable vs prerelease)
+        id: set_manifest
         run: |
-          RAW="${{ github.event.release.tag_name }}"
-          echo "version=${RAW#v}" >> "$GITHUB_OUTPUT"
-
-      - name: Validate module.json is valid JSON
-        run: node -e "JSON.parse(require('fs').readFileSync('module.json','utf8')); console.log('module.json OK')"
-
-      - name: Fail early if pack source is missing
-        run: |
-          if ! find packs -type d -name "_source" -print -quit | grep -q . ; then
-            echo "No pack sources found. Expected at least one: packs/<pack-name>/_source/*.json"
-            exit 1
-          fi
-          echo "Found the following _source folders:"
-          find packs -type d -name "_source" -print
-
-      - name: Compile packs
-        run: node ./_build/compile-all-packs.mjs
-
-      - name: Update module.json for release
-        run: |
-          set -e
-          VERSION="${{ steps.get_version.outputs.version }}"
-          OWNER_REPO="${{ github.repository }}"
-          TAG="${{ github.event.release.tag_name }}"
-          IS_PRERELEASE="${{ github.event.release.prerelease }}"
-
-          sudo apt-get update && sudo apt-get install -y jq
-
-          # Use tag-specific manifest for prereleases (since /latest ignores them),
-          # and /latest for stable releases.
-          if [ "$IS_PRERELEASE" = "true" ]; then
-            MANIFEST_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/module.json"
+          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+            echo "manifest_url=https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/module.json" >> $GITHUB_OUTPUT
           else
-            MANIFEST_URL="https://github.com/${OWNER_REPO}/releases/latest/download/module.json"
+            echo "manifest_url=https://github.com/${{ github.repository }}/releases/latest/download/module.json" >> $GITHUB_OUTPUT
           fi
 
-          DOWNLOAD_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/pf2e_reroll_stats.zip"
+      - name: Modify Module Manifest With Release-Specific Values
+        id: sub_manifest_link_version
+        uses: microsoft/variable-substitution@v1
+        with:
+          files: "module.json"
+        env:
+          version: ${{ steps.get_version.outputs.version-without-v }}
+          manifest: ${{ steps.set_manifest.outputs.manifest_url }}
+          download: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/pf2e_reroll_stats.zip
 
-          jq --arg v "$VERSION" \
-             --arg manifest "$MANIFEST_URL" \
-             --arg download "$DOWNLOAD_URL" \
-             '.version=$v
-              | .manifest?=$manifest
-              | .download?=$download' \
-             module.json > module.json.tmp
+      # --- Build packs from committed _source -------------------------------
 
-          mv module.json.tmp module.json
-          echo "module.json updated:"
-          cat module.json
+      - name: Install Foundry CLI
+        run: npm i -D @foundryvtt/foundryvtt-cli
 
-      - name: Build zip
+      # Optional: fail fast if _source is missing or dupes exist
+      - name: Verify extracted packs (no dupes)
+        run: node _build/verify-extracted-packs.mjs
+
+      - name: Compile packs from _source
+        run: node _build/compile-all-packs.mjs
+
+      # Useful tree dump for debugging
+      - name: Show packs tree
         run: |
-          ZIPNAME="pf2e_reroll_stats.zip"
-          cat > zip-include.txt << 'EOF'
-          assets
-          lang
-          packs
-          scripts
-          module.json
-          README.md
-          LICENSE
-          CHANGELOG.md
-          EOF
+          echo "==== packs tree ===="
+          find packs -maxdepth 2 -type f -printf "%p (%k KB)\n" | sort
 
-          zip -r "$ZIPNAME" -@ < zip-include.txt \
-            -x "node_modules/*" \
-               "packs/**/_source/*" \
-               "*.log" \
-               ".git/*" \
-               ".github/*" \
-               ".vscode/*" \
-               "dist/*" \
-               "coverage/*"
+      # --- Package & publish ------------------------------------------------
 
-          echo "Created $ZIPNAME"
+      - name: Create Module Archive
+        run: |
+          mkdir -p dist
+          if [ -f LICENSE.md ]; then LIC="LICENSE.md"; else LIC="LICENSE"; fi
+          zip -r dist/pf2e_reroll_stats.zip \
+            module.json README.md "$LIC" CHANGELOG.md README.md \
+            scripts/ packs/ lang/ \
+            -x "packs/*/_source/*"
 
-      - name: Attach assets to GitHub Release
+      - uses: release-flow/keep-a-changelog-action@v3
+        id: changelog
+        with:
+          command: query
+          version: ${{ steps.get_version.outputs.version-without-v }}
+
+      - name: Update Release With Files
+        id: create_version_release
         uses: ncipollo/release-action@v1
         with:
-          allowUpdates: true
-          artifactErrorsFailBuild: true
-          replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "module.json,pf2e_reroll_stats.zip"
-          body: ${{ github.event.release.body }}
-          tag: ${{ github.event.release.tag_name }}
+          allowUpdates: true
           draft: ${{ github.event.release.draft }}
           prerelease: ${{ github.event.release.prerelease }}
+          name: ${{ steps.get_version.outputs.version-without-v }}
+          body: ${{ steps.changelog.outputs.release-notes }}
+          artifacts: "module.json, dist/pf2e_reroll_stats.zip"
 
-      # Only publish stable releases to the Foundry index.
-      # Use the /latest manifest so Foundry update checks always pull the newest stable.
-      - name: Publish to FoundryVTT Package Index
-        if: ${{ !github.event.release.prerelease }}
+      - name: Publish Module to FoundryVTT Website
+        id: publish-to-foundry-website
+        if: ${{ ! github.event.release.prerelease }}
         uses: cs96and/FoundryVTT-release-package@v1
         with:
           package-token: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}
-          manifest-url: https://github.com/${{ github.repository }}/releases/latest/download/module.json
+          manifest-url: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/module.json
