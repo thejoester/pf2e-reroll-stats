@@ -4,7 +4,6 @@
 
 ## [1.5.1] - 2025-10-17
 ### Added
-- When displaying stats in chat after a reroll, it will color code the updated results for better visibility. 
 - Added tracking of Critical Failures on reroll. This will require you to choose to reset data (after archiving) or keep old data but Critical Failure percentage will not be as accurate! 
 - Added macro to "Add reroll outcome" for when a player does a re-roll manually not using the reroll function. Will prompt for outcome and log it. 
 ### Fixed
