@@ -1,0 +1,32 @@
+{
+  "name": "Reroll Totals to Chat",
+  "type": "script",
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "command": "/*\n\nThis macro will display all actors combined reroll stats to chat\n\n*/\nif (game.user?.isGM) {\n\tconst api = game.modules.get(\"pf2e-reroll-stats\")?.api ?? globalThis.pf2eRerollStats;\n  if (api?.macro_displayCombinedRerollStats) {\n\t\tapi.macro_displayCombinedRerollStats(); // only call once\n\t} else {\n\t\tui.notifications.error(\"ReRoll Stats module API not available.\");\n\t}\n} else {\n\tui.notifications.warn(\"Only a GM can open the Reroll Editor.\");\n}",
+  "img": "icons/sundries/documents/blueprint-shield.webp",
+  "author": "CLMiGpsYVSTK4VM8",
+  "scope": "global",
+  "folder": null,
+  "ownership": {
+    "default": 0,
+    "CLMiGpsYVSTK4VM8": 3
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "coreVersion": "13.350",
+    "systemId": "pf2e",
+    "systemVersion": "6.7.2",
+    "createdTime": 1733786669529,
+    "modifiedTime": 1760699321635,
+    "lastModifiedBy": "EpqDCtSCbVNM4wPj",
+    "exportSource": null
+  },
+  "_id": "CLaCFNuMjvIMQ8xs",
+  "sort": 100000,
+  "_key": "!macros!CLaCFNuMjvIMQ8xs"
+}

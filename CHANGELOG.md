@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.0] - 2025-10-17
+### Added
+- Added tracking of Critical Failures on reroll. This will require you to choose to reset data (after archiving) or keep old data but Critical Failure percentage will not be as accurate! 
+- Added macro to "Add reroll outcome" for when a player does a re-roll manually not using the reroll function. Will prompt for outcome and log it. 
+
 ## [1.4.4] - 2025-10-05
 ### Fixed
 - **Localization:**

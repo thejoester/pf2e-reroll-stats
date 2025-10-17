@@ -6,8 +6,8 @@
       "activeCondition": ""
     }
   },
-  "command": "/*\n\nThis macro will DELETE all re-roll data for selected token actor! If you want to just reset all stats to 0, then usee the Reset macro instead. \n\n!!! CAN NOT BE UNDONE !!!\n\n\n*/\ndeleteActorRollData();",
-  "img": "icons/svg/blind.svg",
+  "command": "/*\n\nThis macro will DELETE all re-roll data for selected token actor! If you want to just reset all stats to 0, then usee the Reset macro instead. \n\n!!! CAN NOT BE UNDONE !!!\n\n*/\nif (game.user?.isGM) {\n  const api = game.modules.get(\"pf2e-reroll-stats\")?.api ?? globalThis.pf2eRerollStats;\n  if (api?.openRerollEditor) {\n    api.deleteActorRollData();\n  } else {\n    ui.notifications.error(\"ReRoll Stats module API not available.\");\n  }\n} else {\n  ui.notifications.warn(\"Only a GM can open the Reroll Editor.\");\n}",
+  "img": "icons/magic/time/arrows-circling-green.webp",
   "author": "CLMiGpsYVSTK4VM8",
   "scope": "global",
   "folder": null,
@@ -18,12 +18,13 @@
   "_stats": {
     "compendiumSource": null,
     "duplicateSource": null,
-    "coreVersion": "12.331",
+    "coreVersion": "13.350",
     "systemId": "pf2e",
     "systemVersion": "6.7.2",
     "createdTime": 1733578138705,
-    "modifiedTime": 1734000358233,
-    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+    "modifiedTime": 1760699460714,
+    "lastModifiedBy": "EpqDCtSCbVNM4wPj",
+    "exportSource": null
   },
   "_id": "Ebhm5Q11zYOnOoXF",
   "sort": 300000,

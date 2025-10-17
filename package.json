@@ -4,6 +4,9 @@
   "description": "A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls.",
   "main": "index.js",
   "scripts": {
+    "extract": "node _build/extract-all-packs.mjs",
+    "pack": "node _build/compile-all-packs.mjs",
+    "verify-packs": "node _build/verify-extracted-packs.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

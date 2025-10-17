@@ -2,6 +2,7 @@
     "reroll": {
 
         "save": "Save",
+        "close": "Close",
         "selectActor": "- Select Actor -",
         "journalTitle": "Reroll Stats",
         "deleteSelected": "This will DELETE all roll data for the selected token(s). This CANNOT be undone!",
@@ -40,7 +41,8 @@
             "noActorsWithRerollData": "No actors with reroll data found.",
             "countsDoNotAddUp": "Error: Reroll count data does not add up correctly!",
             "successCountsExceedBetter": "Error: Success or Crit Success count cannot exceed Better Rolls count!",
-            "saved": "Reroll data saved successfully."        
+            "saved": "Reroll data saved successfully.",
+            "onlyCharactersSupported": "Only characters are supported for reroll tracking."
         },
         "chat":{
             "speakerSingle": "Reroll Tracker",
@@ -53,6 +55,7 @@
             "sameResultsLabel": "Same Results:",
             "successPercentageLabel": "Reroll Success:",
             "criticalSuccessPercentageLabel": "Reroll Crit:",
+            "criticalFailPercentageLabel": "Reroll Crit Fail:",
             "totalRerollCountLabel": "Total Reroll Count:",
             "totalBetterResultsLabel": "Total Better Results:",
             "totalWorseResultsLabel": "Total Worse Results:",
@@ -63,7 +66,9 @@
             "betterSuccessBtn": "Better Success",
             "betterFailBtn": "Better Fail",
             "worseBtn": "Worse",
-            "sameBtn": "Same"
+            "sameBtn": "Same",
+            "critFailBtn": "Critical Fail",
+            "noOutcomePrompt": "No outcome detected! Please choose an outcome for the reroll."
         },
         "workbench": {
             "title": "Reroll Stats Blocked",
@@ -71,6 +76,24 @@
             "fixIntro": "To fix this, you can either:",
             "step1": "Change the setting manually under <b>PF2e Workbench</b> and set \"Variant Hero Point house rules\" to <b>Normal</b>.",
             "step2": "Disable ReRoll Stats."
+        },
+        "migration": {
+			"title": "PLEASE READ: PF2e Reroll Stats Migration!",
+			"question": "PF2e Reroll stats has added support to track critical failure reroll results. Do you want to archive your current stats to an archived journal and reset them (recommended), or keep your current stats (but the critical failure calculations will not be accurate)?",
+			"archiveReset": "Archive & Reset (Recommended)",
+			"keep": "Keep Current Stats",
+			"cancel": "Decide Later",
+			"note": "You can always export your current stats first. This prompt will not show again after you choose.",
+			"archiveHeader": "Archived Reroll Stats",
+			"archivedAt": "Last Saved {when}",
+			"archivedAndReset": "Archived current stats and reset counters.",
+			"keptWarning": "Keeping current stats. Critical failure percentages may be inaccurate compared to your historical totals.",
+			"errorArchive": "Error archiving/resetting reroll stats. See console."
+        },
+        "macro": {
+            "addRerollResult": "Add ReRoll Result for {name}",
+            "selectOutcome": "Select Reroll Outcome for <strong>{name}</strong"
         }
+
     }
 }

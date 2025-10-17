@@ -6,7 +6,7 @@
       "activeCondition": ""
     }
   },
-  "command": "/*\n\nThis Macro will compile all reroll stats for actors and create a journal entry named \"Reroll tracker Stats\" in the base Journal directory.\n\n*/\n\n// Compile Journal\ncompileActorStatsToJournal();\n// Replace \"Your Journal Name\" with the name of the journal entry\nconst journalName = \"Reroll Stats\";\n\n// Find the journal entry by name\nconst journal = game.journal.contents.find(j => j.name === journalName);\n\n// If the journal entry exists, show it\nif (journal) {\n  journal.sheet.render(true);\n} else {\n  console.error(`Journal entry with name \"${journalName}\" not found.`);\n}",
+  "command": "/*\n\nThis Macro will compile all reroll stats for actors and create a journal entry named \"Reroll tracker Stats\" in the base Journal directory.\n\n*/\nif (game.user?.isGM) {\n  const api = game.modules.get(\"pf2e-reroll-stats\")?.api ?? globalThis.pf2eRerollStats;\n  if (api?.compileActorStatsToJournal) {\n    api.compileActorStatsToJournal();\n    // Replace \"Your Journal Name\" with the name of the journal entry\n    const journalName = \"Reroll Stats\";\n    \n    // Find the journal entry by name\n    const journal = game.journal.contents.find(j => j.name === journalName);\n    \n    // If the journal entry exists, show it\n    if (journal) {\n      journal.sheet.render(true);\n    } else {\n      console.error(`Journal entry with name \"${journalName}\" not found.`);\n    }\n  } else {\n    ui.notifications.error(\"ReRoll Stats module API not available.\");\n  }\n} else {\n  ui.notifications.warn(\"Only a GM can open the Reroll Editor.\");\n}",
   "img": "icons/sundries/documents/document-bound-white-tan.webp",
   "author": "CLMiGpsYVSTK4VM8",
   "scope": "global",
@@ -18,12 +18,13 @@
   "_stats": {
     "compendiumSource": null,
     "duplicateSource": null,
-    "coreVersion": "12.331",
+    "coreVersion": "13.350",
     "systemId": "pf2e",
     "systemVersion": "6.7.2",
     "createdTime": 1733576827255,
-    "modifiedTime": 1734000358233,
-    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+    "modifiedTime": 1760684729234,
+    "lastModifiedBy": "EpqDCtSCbVNM4wPj",
+    "exportSource": null
   },
   "_id": "i8JWfo4X13n7SUbL",
   "sort": 500000,

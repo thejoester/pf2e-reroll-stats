@@ -6,7 +6,7 @@
       "activeCondition": ""
     }
   },
-  "command": "openRerollEditor();",
+  "command": "if (game.user?.isGM) {\n  const api = game.modules.get(\"pf2e-reroll-stats\")?.api ?? globalThis.pf2eRerollStats;\n  if (api?.macro_openRerollEditor) {\n    api.macro_openRerollEditor();\n  } else {\n    ui.notifications.error(\"ReRoll Stats module API not available.\");\n  }\n} else {\n  ui.notifications.warn(\"Only a GM can open the Reroll Editor.\");\n}",
   "img": "icons/tools/scribal/ink-quill-pink.webp",
   "author": "CLMiGpsYVSTK4VM8",
   "scope": "global",
@@ -18,12 +18,13 @@
   "_stats": {
     "compendiumSource": null,
     "duplicateSource": null,
-    "coreVersion": "12.331",
+    "coreVersion": "13.350",
     "systemId": "pf2e",
     "systemVersion": "6.7.2",
     "createdTime": 1734000358189,
-    "modifiedTime": 1734002484258,
-    "lastModifiedBy": "CLMiGpsYVSTK4VM8"
+    "modifiedTime": 1760685122550,
+    "lastModifiedBy": "EpqDCtSCbVNM4wPj",
+    "exportSource": null
   },
   "_id": "Krw1KpuB7VDPD8lI",
   "sort": 200000,

@@ -1,0 +1,32 @@
+{
+  "name": "Add Reroll Result",
+  "type": "script",
+  "_id": "yGamBtm3b0N1svA7",
+  "author": "EpqDCtSCbVNM4wPj",
+  "img": "icons/magic/life/cross-embers-glow-yellow-purple.webp",
+  "scope": "global",
+  "command": "if (game.user?.isGM) {\n\tconst api = game.modules.get(\"pf2e-reroll-stats\")?.api ?? globalThis.pf2eRerollStats;\n\tif (api?.macro_addRerollResult) {\n\t\tapi.macro_addRerollResult(); // only call once\n\t} else {\n\t\tui.notifications.error(\"ReRoll Stats module API not available.\");\n\t}\n} else {\n\tui.notifications.warn(\"Only a GM can open the Reroll Editor.\");\n}",
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0,
+    "EpqDCtSCbVNM4wPj": 3
+  },
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null,
+    "coreVersion": "13.350",
+    "systemId": "pf2e",
+    "systemVersion": "7.6.0",
+    "createdTime": 1760685250970,
+    "modifiedTime": 1760689021244,
+    "lastModifiedBy": "EpqDCtSCbVNM4wPj"
+  },
+  "_key": "!macros!yGamBtm3b0N1svA7"
+}

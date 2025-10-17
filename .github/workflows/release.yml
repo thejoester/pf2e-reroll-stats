@@ -43,7 +43,7 @@ jobs:
           find packs -type d -name "_source" -print
 
       - name: Compile packs
-        run: node ./_build/compile-all-packs.mjs ./packs
+        run: node ./_build/compile-all-packs.mjs
 
       - name: Update module.json for release
         run: |
