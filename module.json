@@ -4,7 +4,7 @@
   "description": "Tracks rolls made with 'Reroll using Hero Point' and compares the results.",
   "version": "0.0.0",
   "compatibility": {
-    "minimum": "12",
+    "minimum": "13",
     "verified": "13"
   },
   "authors": [
@@ -23,6 +23,11 @@
       "lang": "en",
       "name": "English",
       "path": "lang/en.json"
+    },
+    {
+      "lang": "fr",
+      "name": "French",
+      "path": "lang/fr.json"
     }
   ],
   "relationships": {
@@ -31,8 +36,8 @@
         "id": "pf2e",
         "type": "system",
         "compatibility": {
-          "minimum": "6.12.4",
-          "verified": "7.5.2"
+          "minimum": "7.5.0",
+          "verified": "7.6.3"
         }
       }
     ]
