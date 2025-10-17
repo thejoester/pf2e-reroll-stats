@@ -84,7 +84,6 @@ jobs:
           assets
           lang
           packs
-          _build
           scripts
           module.json
           README.md
