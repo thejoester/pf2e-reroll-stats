@@ -1162,7 +1162,7 @@ Hooks.on("createChatMessage", async (message) => {
         } else {
             DL(`Reroll has outcome '${context.outcome}' — processing normally.`);
             await handleRerollEvent(actor, originalRoll, rerollResult, context.outcome);
-        }
+        } 
 
     } else {
         DL("Original D20 roll detected (not a reroll).");
