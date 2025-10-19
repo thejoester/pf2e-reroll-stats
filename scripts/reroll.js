@@ -2,11 +2,10 @@ import { LT } from "./localization.js";
 // Log to Console
 console.log("%cPF2e ReRoll Stats | reroll.js loaded", "color: orange; font-weight: bold;");
 
-// Namespace for the module
-const MODULE_NAME = "pf2e-reroll-stats";
 
-// Label to append to the beginning of logs
-const LOG_LABEL = "PF2e ReRoll Stats |";
+const MODULE_NAME = "pf2e-reroll-stats";        // Namespace for the module
+const WB_MOD_ID = "xdy-pf2e-workbench";         // Namespace for workbench module
+const LOG_LABEL = "PF2e ReRoll Stats";        // Label to append to the beginning of logs
 
 // Function for debugging and logging
 export function DL(intLogType, stringLogMsg, objObject = null) {
@@ -137,8 +136,18 @@ Hooks.once("init", () => {
         scope: "world", 
         config: true,  
         type: Boolean,
-        default: true,
+        default: true
 	 });
+
+     // Option to calculate reroll settings if xdy-workbench variant rule is enabled
+     game.settings.register(MODULE_NAME, "ignoreWorkbenchVariant", {
+        name: LT.settings.IgnoreWorkbenchVariantName(),
+        hint: LT.settings.IgnoreWorkbenchVariantHint(),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false
+     });
 	 
     // Register settings for persistent data
     game.settings.register(MODULE_NAME, "debugLevel", {
@@ -280,7 +289,7 @@ async function handleRerollEvent(actor, originalTotal, rerollTotal, outcome) {
         const hpRule = game.settings.get("xdy-pf2e-workbench", "heroPointRules");
         DL(`Workbench hp rule: ${hpRule}`);
         
-        if (hpRule !== "no") {
+        if (hpRule !== "no" && !game.settings.get(MODULE_NAME, "ignoreWorkbenchVariant")) {
             const messageContent = `
                 <h2>${LT.workbench.title()}</h2>
                 <p>${LT.workbench.warning()}</p>
@@ -288,6 +297,7 @@ async function handleRerollEvent(actor, originalTotal, rerollTotal, outcome) {
                 <ol>
                     <li>${LT.workbench.step1()}</li>
                     <li>${LT.workbench.step2()}</li>
+                    <li>${LT.workbench.step3()}</li>
                 </ol>
             `;
 
@@ -662,6 +672,107 @@ async function compileActorStatsToJournal(journalName = LT.journalTitle()) {
     }
 
     DL("Hero Point Reroll Stats have been compiled into a journal entry.");
+}
+
+//function to retrieve the d20 face value from a rolls/rerolls
+function getD20FaceValue(message) {
+
+    // If xdy-workbench is set to "useHighestHeroPointRoll" and we captured RAW, prefer it
+	try {
+		const modId = "xdy-pf2e-workbench";
+		if (game.modules.get(modId)?.active && game.settings?.settings?.has?.(`${modId}.heroPointRules`)) {
+			if (game.settings.get(modId, "heroPointRules") === "useHighestHeroPointRoll") {
+				const raw = message?.rolls?.[0]?.options?._wbRaw;
+				if (Number.isFinite(raw?.rawNewD20)) {
+					DL(`d20 face value (pre-Workbench/useHighest) = ${raw.rawNewD20}`);
+					return raw.rawNewD20;
+				}
+			}
+		}
+	} catch (e) {
+		// ignore and fall back to normal extraction
+	}
+
+    const d20Face =
+        message.rolls?.[0]
+        ?.dice?.find(d => d.faces === 20 && d.number === 1)
+        ?.results?.find(r => r?.active)?.result ?? null;
+    DL(`d20 face value = ${d20Face}`);
+    return d20Face;
+}
+
+// function to retrieve the d20 face value from pf2e-toolbox target helper rolls/rerolls
+function getTBD20FaceValue(data) {
+    // If xdy-workbench is set to "useHighestHeroPointRoll" and we captured RAW, prefer it
+    try {
+		const modId = "xdy-pf2e-workbench";
+		if (game.modules.get(modId)?.active && game.settings?.settings?.has?.(`${modId}.heroPointRules`)) {
+			if (game.settings.get(modId, "heroPointRules") === "useHighestHeroPointRoll") {
+				// If caller passed a Roll as the 2nd param (kept/new), try to read our capture off it
+				const roll = arguments?.[1];
+				const raw = roll?.options?._wbRaw;
+				if (Number.isFinite(raw?.rawNewD20)) {
+					DL(`TB d20 face (pre-Workbench/useHighest via roll.options) = ${raw.rawNewD20}`);
+					return raw.rawNewD20;
+				}
+				// If Toolbelt handed you an explicit raw die in data, prefer it
+				if (Number.isFinite(data?.rawDie)) {
+					DL(`TB d20 face (pre-Workbench/useHighest via data.rawDie) = ${data.rawDie}`);
+					return data.rawDie;
+				}
+			}
+		}
+	} catch (e) {
+		// ignore and fall back
+	}
+
+    const d20Face = data?.die;
+    return d20Face;
+}
+        
+function _rsGetActiveD20(roll) {
+    try {
+        const d20 = roll?.dice?.find(d => d.faces === 20 && d.number === 1);
+        const res = d20?.results?.find(r => r?.active)?.result;
+        return Number.isFinite(res) ? res : null;
+    } catch (err) {
+        DL(3, "_rsGetActiveD20(): error", err);
+        return null;
+    }
+}
+
+function _wbCaptureUseHighest(oldRoll, newRoll, _something, which) {
+    try {
+
+        const faceBefore = (function getActiveD20(r) {
+            try {
+                const d20 = r?.dice?.find(d => d.faces === 20 && d.number === 1);
+                const res = d20?.results?.find(rr => rr?.active)?.result;
+                return Number.isFinite(res) ? res : null;
+            } catch { return null; }
+        })(newRoll);
+
+        DL(`capture BEFORE WB: d20=${faceBefore}`);
+        if (!newRoll.options) newRoll.options = {};
+        newRoll.options._wbRaw = { rawNewD20: faceBefore, rule: "useHighestHeroPointRoll" };
+
+        if (which !== "new") return;
+
+        // Check the specific rule directly; no helper functions created.
+        const modId = "xdy-pf2e-workbench";
+        if (!game.modules.get(modId)?.active) return;
+        if (!game.settings?.settings?.has?.(`${modId}.heroPointRules`)) return;
+        const rule = game.settings.get(modId, "heroPointRules");
+        if (rule !== "useHighestHeroPointRoll") return;
+
+        const rawNewD20 = _rsGetActiveD20(newRoll);
+        if (!newRoll.options) newRoll.options = {};
+        newRoll.options._wbRaw = { rawNewD20, rule };
+
+        DL(`_wbCaptureUseHighest(): rawNewD20=${rawNewD20}`);
+    } catch (err) {
+        DL(3, "_wbCaptureUseHighest(): error", err);
+    }
 }
 
 /* =======================================================================
@@ -1063,6 +1174,71 @@ async function macro_addRerollResult() {
 	}
 }
 
+// Backup the current reroll stats to a JSON file (downloads in the browser)
+async function macro_backupRerollData() {
+	// GM only (since this represents the authoritative world state)
+	if (!game.user.isGM) {
+		ui.notifications?.warn(LT.notifications?.gmOnly?.() ?? "Only the GM can run this.");
+		DL(2, "macro_backupRerollData(): blocked non-GM");
+		return;
+	}
+
+	try {
+		// Make sure we’re working with the latest persisted state
+		const persisted = game.settings.get(MODULE_NAME, "rollData") || {};
+		// Merge any unsaved in-memory changes, favoring in-memory
+		const snapshot = foundry?.utils?.deepClone
+			? foundry.utils.deepClone({ ...persisted, ...rollDataByActor })
+			: structuredClone({ ...persisted, ...rollDataByActor });
+
+		const payload = {
+			module: MODULE_NAME,
+			exportedAt: new Date().toISOString(),
+			world: {
+				id: game.world?.id ?? null,
+				title: game.world?.title ?? null
+			},
+			system: {
+				id: game.system?.id ?? null,
+				version: game.system?.version ?? null
+			},
+			data: snapshot
+		};
+
+		const json = JSON.stringify(payload, null, 2);
+
+		// Build a readable filename: <world>-reroll-backup-YYYYMMDD-HHMMSS.json
+		const safeWorld = String(game.world?.title ?? "world").replace(/[^\w.-]+/g, "_");
+		const now = new Date();
+		const ts = [
+			now.getFullYear(),
+			String(now.getMonth() + 1).padStart(2, "0"),
+			String(now.getDate()).padStart(2, "0"),
+			"-",
+			String(now.getHours()).padStart(2, "0"),
+			String(now.getMinutes()).padStart(2, "0"),
+			String(now.getSeconds()).padStart(2, "0")
+		].join("");
+		const filename = `${safeWorld}-reroll-backup-${ts}.json`;
+
+		// Foundry client helper triggers a browser download
+		// (V13 keeps this global; no path or FilePicker needed)
+		saveDataToFile(json, "application/json", filename);
+
+		ui.notifications?.info(LT.notifications?.backupSaved?.() ?? "Reroll data backup saved.");
+		DL(`macro_backupRerollData(): wrote ${filename}`, { bytes: json.length });
+	} catch (err) {
+		DL(3, "macro_backupRerollData(): failed to write backup", err);
+		ui.notifications?.error(LT.notifications?.backupFailed?.() ?? "Failed to save reroll data backup.");
+	}
+}
+
+/* =======================================================================
+    {HOOKS}
+======================================================================= */
+
+Hooks.on("pf2e.reroll", _wbCaptureUseHighest );
+
 // Hook into chat message creation to track d20 rolls
 Hooks.on("createChatMessage", async (message) => {
 
@@ -1096,14 +1272,17 @@ Hooks.on("createChatMessage", async (message) => {
 
     // Check if it is a ReRoll
     if (context?.isReroll) {
-        DL("ReRoll detected!");
-
+        
         // Get the reroll result and original roll to compare
-        const rerollResult = message.rolls[0]?.total;
+        // const rerollResult = message.rolls[0]?.total;
+        const rerollResult = getD20FaceValue(message);
         const originalRoll = actorData.originalRoll;
+        const hasOutcome = !!context?.outcome;
+
+        DL(`ReRoll detected | original: ${originalRoll} reroll: ${rerollResult} outcome:${hasOutcome}`);
 
         // If outcome is missing (no DC prompt), we whisper a GM-only chooser and stop further auto-accounting
-        const hasOutcome = !!context?.outcome;
+        
         if (!hasOutcome) {
             DL("createChatMessage(): Reroll without outcome detected — prompting GM.");
 
@@ -1168,13 +1347,16 @@ Hooks.on("createChatMessage", async (message) => {
         DL("Original D20 roll detected (not a reroll).");
 		
         // Save the original roll for this actor
-        actorData.originalRoll = message.rolls[0]?.total; // Save total roll value
+        //actorData.originalRoll = message.rolls[0]?.total; // Save total roll value
+        actorData.originalRoll = getD20FaceValue(message); // Save total roll value
         DL(`Original roll saved for actor ${actorId}: ${actorData.originalRoll}`);
     }    
 });
 
 // Hook into pf2e-toolbelt targetHelper saves
 Hooks.on("pf2e-toolbelt.rollSave", async ({ roll, message, rollMessage, target, data }) => {
+  
+
 	// GM only
 	if (!game.user.isGM) return;
 
@@ -1191,7 +1373,8 @@ Hooks.on("pf2e-toolbelt.rollSave", async ({ roll, message, rollMessage, target, 
 		 return;
 		}
 
-		const rollTotal = Number(roll?.total ?? data?.value ?? 0);
+		//const rollTotal = Number(roll?.total ?? data?.value ?? 0);
+        const rollTotal = getTBD20FaceValue(data);
 		const actorId = actor.id;
 
 		if (!rollDataByActor[actorId]) {
@@ -1236,7 +1419,8 @@ Hooks.on("pf2e-toolbelt.rerollSave", async ({ oldRoll, newRoll, keptRoll, messag
 
 		// The kept result is the one we compare against the stored original
 		const kept = keptRoll ?? newRoll ?? null;
-		const keptTotal = Number(kept?.total ?? data?.value ?? 0);
+		//const keptTotal = Number(kept?.total ?? data?.value ?? 0);
+        const keptTotal = getTBD20FaceValue(data);
 
 		// Normalize outcome if present
 		const rawOutcome = String(data?.success ?? data?.unadjustedOutcome ?? "unknown");
@@ -1320,7 +1504,23 @@ Hooks.on("renderChatMessage", async (message, html, data) => {
 Hooks.once("ready", async () => {
     // Initialize rollDataByActor from game settings or as an empty object
     rollDataByActor = game.settings.get(MODULE_NAME, "rollData") || {};
-    console.log(`%c${LOG_LABEL} Reroll Tracker ready!`, "color: Orange; font-weight: bold;");
+    
+    //Make our pf2e.reroll hook run before Workbench
+    try {
+        const list = Hooks._hooks?.["pf2e.reroll"];
+        if (Array.isArray(list)) {
+            const idx = list.indexOf(_wbCaptureUseHighest);
+            if (idx > 0) {
+                list.splice(idx, 1);
+                list.unshift(_wbCaptureUseHighest);
+                DL("pf2e.reroll: moved _wbCaptureUseHighest to the front (before Workbench)");
+                
+            }
+            DL(`pf2e.rerool list: `, list);
+        }
+    } catch (err) {
+        DL(2, "pf2e.reroll: unable to reorder handlers", err);
+    }
 
     // Handle Migration if needed
     try {
@@ -1345,7 +1545,8 @@ Hooks.once("ready", async () => {
 			macro_deleteActorRollData,
 			macro_deleteAllRerollStats,
 			macro_openRerollEditor,
-            macro_addRerollResult
+            macro_addRerollResult,
+            macro_backupRerollData
 		};
 
 		// Expose the API via the module
@@ -1358,4 +1559,5 @@ Hooks.once("ready", async () => {
 	} catch (e) {
 		console.error(`PF2e ReRoll Stats | Failed to expose API: ${e?.message || e}`);
 	}
+    console.log(`%c${LOG_LABEL} Reroll Tracker ready!`, "color: Orange; font-weight: bold;");
 });

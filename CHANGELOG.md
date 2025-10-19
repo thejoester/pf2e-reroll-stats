@@ -1,6 +1,9 @@
 # Changelog
 
-
+## [1.6.0-test.1] - 2025-10-19
+### Added
+- Added support for pf2e workbench hero point variant rules. 
+- Added Macro to backup reroll data  
 
 ## [1.5.1] - 2025-10-17
 ### Added

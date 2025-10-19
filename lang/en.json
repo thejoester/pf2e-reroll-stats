@@ -19,7 +19,9 @@
             "debugLevelNone": "None",
             "debugLevelErrors": "Errors",
             "debugLevelWarnings": "Warnings",
-            "debugLevelAll": "All"
+            "debugLevelAll": "All",
+            "IgnoreWorkbenchVariantName": "Still Track Rerolls with PF2e Workbench Variant Hero Point Rules enabled",
+            "IgnoreWorkbenchVariantHint": "If PF2e Workbench is active and the Variant Hero Point house rules are enabled, enabling this option will still track reroll stats. Disabling it will skip tracking when those rules are active. Be aware that the stats may be inaccurate if those rules are enabled."
         },
         "dialog": {
             "titleConfirm": "Confirmation",
@@ -75,7 +77,8 @@
             "warning": "The setting in PF2e Workbench to use Variant Hero Point house rules is enabled and will cause the stats to be incorrect.",
             "fixIntro": "To fix this, you can either:",
             "step1": "Change the setting manually under <b>PF2e Workbench</b> and set \"Variant Hero Point house rules\" to <b>Normal</b>.",
-            "step2": "Disable ReRoll Stats."
+            "step2": "Disable ReRoll Stats.",
+            "step3": "Enable the setting in <strong>PF2e Reroll Stats</string to ignore the Workbench Variant Hero Point rules and continue tracking reroll stats (stats may be inaccurate)."
         },
         "migration": {
 			"title": "PLEASE READ: PF2e Reroll Stats Migration!",
