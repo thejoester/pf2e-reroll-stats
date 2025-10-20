@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.0-test.2] - 2025-10-20
+### Added
+- Added support for pf2e workbench hero point variant rules. 
+- Added Macro to backup reroll data
+- Added Macro to import from backup .json file
+
 ## [1.6.0-test.1] - 2025-10-19
 ### Added
 - Added support for pf2e workbench hero point variant rules. 

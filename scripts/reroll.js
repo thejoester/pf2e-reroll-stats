@@ -1,11 +1,12 @@
 import { LT } from "./localization.js";
-// Log to Console
-console.log("%cPF2e ReRoll Stats | reroll.js loaded", "color: orange; font-weight: bold;");
-
 
 const MODULE_NAME = "pf2e-reroll-stats";        // Namespace for the module
-const WB_MOD_ID = "xdy-pf2e-workbench";         // Namespace for workbench module
 const LOG_LABEL = "PF2e ReRoll Stats";        // Label to append to the beginning of logs
+const SESSION_KEY_WB_WARN = `${MODULE_NAME}.wbWarnShown`;
+
+//log to console
+console.log("%cPF2e ReRoll Stats | reroll.js loaded", "color: orange; font-weight: bold;");
+
 
 // Function for debugging and logging
 export function DL(intLogType, stringLogMsg, objObject = null) {
@@ -94,81 +95,7 @@ export function DL(intLogType, stringLogMsg, objObject = null) {
 // Global variable for tracking roll data by actor
 let rollDataByActor = {};
 
-Hooks.once("init", () => {
-    
-    // HIDDEN DATA: persistent roll data
-    game.settings.register(MODULE_NAME, "rollData", {
-        name: LT.settings.rollDataName(),
-        hint: LT.settings.rollDataHint(),
-        scope: "world", // Saved at the world level
-        config: false,  // Not exposed in the settings menu
-        type: Object,
-        default: {},
-    });
 
-    // HIDDEN DATA: Reusable world-scoped object to track any/all migrations
-	game.settings.register(MODULE_NAME, "migrationData", {
-		name: "PF2e Reroll: Migration Data",
-		scope: "world",
-		config: false,
-		type: Object,
-		default: {} 
-	});
-    
-	// Register settings to output to chat after a reroll
-    game.settings.register(MODULE_NAME, "outputToChat", {
-        name: LT.settings.outputToChatName(),
-        hint: LT.settings.outputToChatHint(),
-        scope: "world", 
-        config: true,  
-        type: Boolean,
-        default: false,
-		onChange: (value) => {
-            DL(`PF2E Reroll Stats | Setting outputToChat: ${value}`);
-        },
-		requiresReload: true
-	 });
-	
-	// Register settings to ignore minions
-    game.settings.register(MODULE_NAME, "ignoreMinion", {
-        name: LT.settings.ignoreMinionName(),
-        hint: LT.settings.ignoreMinionHint(),
-        scope: "world", 
-        config: true,  
-        type: Boolean,
-        default: true
-	 });
-
-     // Option to calculate reroll settings if xdy-workbench variant rule is enabled
-     game.settings.register(MODULE_NAME, "ignoreWorkbenchVariant", {
-        name: LT.settings.IgnoreWorkbenchVariantName(),
-        hint: LT.settings.IgnoreWorkbenchVariantHint(),
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: false
-     });
-	 
-    // Register settings for persistent data
-    game.settings.register(MODULE_NAME, "debugLevel", {
-        name: LT.settings.debugLevelName(),
-		hint: LT.settings.debugLevelHint(),
-		scope: "world",
-		config: true,
-		type: String,
-		choices: {
-			"none": LT.settings.debugLevelNone(),
-			"error": LT.settings.debugLevelErrors(),
-			"warn": LT.settings.debugLevelWarnings(),
-			"all": LT.settings.debugLevelAll()
-		},
-		default: "none", // Default to no logging
-		requiresReload: true
-	});
-	const debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
-	console.log(`%cPF2e ReRoll Stats | Debugging: ${debugLevel}`, "color: orange; font-weight: bold;");
-
-});
 
 async function migration_critFailData() {
 	try {
@@ -289,23 +216,32 @@ async function handleRerollEvent(actor, originalTotal, rerollTotal, outcome) {
         const hpRule = game.settings.get("xdy-pf2e-workbench", "heroPointRules");
         DL(`Workbench hp rule: ${hpRule}`);
         
+        // If workbench is enabled and ignore settings disabled (default)
         if (hpRule !== "no" && !game.settings.get(MODULE_NAME, "ignoreWorkbenchVariant")) {
-            const messageContent = `
-                <h2>${LT.workbench.title()}</h2>
-                <p>${LT.workbench.warning()}</p>
-                <p>${LT.workbench.fixIntro()}</p>
-                <ol>
-                    <li>${LT.workbench.step1()}</li>
-                    <li>${LT.workbench.step2()}</li>
-                    <li>${LT.workbench.step3()}</li>
-                </ol>
-            `;
+            
+            // Check if warning message has been shown, and skip if it has this session
+            let shown = null; 
+            try { shown = sessionStorage.getItem(SESSION_KEY_WB_WARN); } catch (e) { /* ignore */ }
+            if (!shown) {
+                const messageContent = `
+                    <h2>${LT.workbench.title()}</h2>
+                    <p>${LT.workbench.warning()}</p>
+                    <p>${LT.workbench.fixIntro()}</p>
+                    <ol>
+                        <li>${LT.workbench.step1()}</li>
+                        <li>${LT.workbench.step2()}</li>
+                        <li>${LT.workbench.step3()}</li>
+                    </ol>
+                `;
+                await ChatMessage.create({
+                    user: game.user.id,
+                    content: messageContent,
+                    speaker: { alias: LT.chat.speakerSingle() },
+                });
 
-            ChatMessage.create({
-                user: game.user.id,
-                content: messageContent,
-                speaker: { alias: LT.chat.speakerSingle() },
-            });
+                try { sessionStorage.setItem(SESSION_KEY_WB_WARN, "1"); } catch (e) { /* ignore */ }
+                DL("handleRerollEvent(): Workbench variant warning shown (session-scoped)");
+            }
             return;
         }
     }
@@ -715,7 +651,7 @@ function getTBD20FaceValue(data) {
 					DL(`TB d20 face (pre-Workbench/useHighest via roll.options) = ${raw.rawNewD20}`);
 					return raw.rawNewD20;
 				}
-				// If Toolbelt handed you an explicit raw die in data, prefer it
+				// If Toolbelt handed explicit raw die in data, prefer it
 				if (Number.isFinite(data?.rawDie)) {
 					DL(`TB d20 face (pre-Workbench/useHighest via data.rawDie) = ${data.rawDie}`);
 					return data.rawDie;
@@ -1176,9 +1112,9 @@ async function macro_addRerollResult() {
 
 // Backup the current reroll stats to a JSON file (downloads in the browser)
 async function macro_backupRerollData() {
-	// GM only (since this represents the authoritative world state)
+	// GM only 
 	if (!game.user.isGM) {
-		ui.notifications?.warn(LT.notifications?.gmOnly?.() ?? "Only the GM can run this.");
+		ui.notifications?.warn(LT.notifications.gmOnly());
 		DL(2, "macro_backupRerollData(): blocked non-GM");
 		return;
 	}
@@ -1207,29 +1143,163 @@ async function macro_backupRerollData() {
 
 		const json = JSON.stringify(payload, null, 2);
 
-		// Build a readable filename: <world>-reroll-backup-YYYYMMDD-HHMMSS.json
+		// Build a readable filename: <world>-reroll-backup-YYYYMMDD.json
 		const safeWorld = String(game.world?.title ?? "world").replace(/[^\w.-]+/g, "_");
 		const now = new Date();
 		const ts = [
 			now.getFullYear(),
 			String(now.getMonth() + 1).padStart(2, "0"),
 			String(now.getDate()).padStart(2, "0"),
-			"-",
-			String(now.getHours()).padStart(2, "0"),
-			String(now.getMinutes()).padStart(2, "0"),
-			String(now.getSeconds()).padStart(2, "0")
 		].join("");
 		const filename = `${safeWorld}-reroll-backup-${ts}.json`;
 
 		// Foundry client helper triggers a browser download
-		// (V13 keeps this global; no path or FilePicker needed)
 		saveDataToFile(json, "application/json", filename);
 
-		ui.notifications?.info(LT.notifications?.backupSaved?.() ?? "Reroll data backup saved.");
+		ui.notifications?.info(LT.macro.backupSaved());
 		DL(`macro_backupRerollData(): wrote ${filename}`, { bytes: json.length });
 	} catch (err) {
 		DL(3, "macro_backupRerollData(): failed to write backup", err);
-		ui.notifications?.error(LT.notifications?.backupFailed?.() ?? "Failed to save reroll data backup.");
+		ui.notifications?.error(LT.macro.backupFailed());
+	}
+}
+
+// Import reroll stats from a backup .json file 
+async function macro_restoreRerollData() {
+	// GM only
+	if (!game.user.isGM) {
+		ui.notifications?.warn(LT.notifications.gmOnly());
+		DL(2, "macro_restoreRerollData(): blocked non-GM");
+		return;
+	}
+
+	try {
+		const DialogV2 = foundry?.applications?.api?.DialogV2;
+		const dialogId = "pf2e-reroll-restore";
+
+		const title = LT.macro.restoreTitle();
+		const warning = LT.macro.restoreWarning();
+		const areYouSure = LT.dialog.areYouSure();
+		const chooseFile = LT.macro.selectBackupFile();
+		const okLbl = LT.dialog.ok();
+		const cancelLbl = LT.cancel();
+
+		const content = `
+			<div style="display:flex;flex-direction:column;gap:.5rem;">
+				<p style="color:#b00;font-weight:bold;">${warning}</p>
+				<p>${areYouSure}</p>
+				<label for="pf2e-rrs-file">${chooseFile}</label>
+				<input type="file" id="pf2e-rrs-file" accept="application/json,.json" />
+			</div>
+		`;
+
+		const dlg = new DialogV2({
+			id: dialogId,
+			title,
+			content,
+			buttons: [
+				{
+					action: "ok",
+					label: okLbl,
+					default: true,
+					callback: async () => {
+						try {
+							const input = document.getElementById("pf2e-rrs-file");
+							const file = input?.files?.[0] ?? null;
+							if (!file) {
+								ui.notifications?.warn(LT.notifications.noFileSelected());
+								DL(2, "macro_restoreRerollData(): no file selected");
+								return;
+							}
+
+							const text = await file.text();
+							let payload;
+							try {
+								payload = JSON.parse(text);
+							} catch (e) {
+								DL(3, "macro_restoreRerollData(): invalid JSON", e);
+								ui.notifications?.error(LT.notifications.invalidJson());
+								return;
+							}
+
+							// Accept both exported envelope and plain map
+							let imported = null;
+							if (payload && typeof payload === "object") {
+								if (payload.module === MODULE_NAME && payload.data && typeof payload.data === "object") {
+									imported = payload.data; // our exported format
+								} else if (!payload.module && !payload.data) {
+									imported = payload; // plain map
+								}
+							}
+							if (!imported || typeof imported !== "object") {
+								ui.notifications?.error(LT.macro.invalidBackupShape());
+								DL(3, "macro_restoreRerollData(): invalid backup shape", payload);
+								return;
+							}
+
+							// Second confirm with counts
+							const actorCount = Object.keys(imported).length;
+							const confirmTitle = LT.macro.confirmImport();
+							const overwriteMsg = LT.macro.overwriteCounts({ count: actorCount });
+
+							const confirmDlg = new DialogV2({
+								id: `${dialogId}-confirm`,
+								title: confirmTitle,
+								content: `
+									<div style="display:flex;flex-direction:column;gap:.5rem;">
+										<p>${overwriteMsg}</p>
+										<p>${LT.dialog.areYouSure()}</p>
+									</div>
+								`,
+								buttons: [
+									{
+										action: "yes",
+										label: LT.dialog.yes(),
+										default: true,
+										callback: async () => {
+											try {
+												// Overwrite in-memory, persist, rebuild journal
+												rollDataByActor = imported;
+												DL("macro_restoreRerollData(): imported data applied in-memory", { actors: actorCount });
+
+												await saveRollData(); // persist to world setting
+												await compileActorStatsToJournal(); // rebuild journal
+
+												ui.notifications?.info(LT.macro.importComplete());
+											} catch (err) {
+												DL(3, "macro_restoreRerollData(): import failed on apply", err);
+												ui.notifications?.error(LT.macro.importFailed());
+											}
+										}
+									},
+									{
+										action: "no",
+										label: LT.dialog.no(),
+										callback: () => DL("macro_restoreRerollData(): user canceled at confirm")
+									}
+								],
+								position: { width: 520 }
+							});
+							await confirmDlg.render(true);
+						} catch (err) {
+							DL(3, "macro_restoreRerollData(): import failed", err);
+							ui.notifications?.error(LT.macro.importFailed());
+						}
+					}
+				},
+				{
+					action: "cancel",
+					label: cancelLbl,
+					callback: () => DL("macro_restoreRerollData(): canceled")
+				}
+			],
+			position: { width: 520 }
+		});
+
+		await dlg.render(true);
+	} catch (err) {
+		DL(3, "macro_restoreRerollData(): failed to open dialog", err);
+		ui.notifications?.error(LT.macro.importFailed());
 	}
 }
 
@@ -1546,7 +1616,8 @@ Hooks.once("ready", async () => {
 			macro_deleteAllRerollStats,
 			macro_openRerollEditor,
             macro_addRerollResult,
-            macro_backupRerollData
+            macro_backupRerollData,
+            macro_restoreRerollData
 		};
 
 		// Expose the API via the module
@@ -1560,4 +1631,80 @@ Hooks.once("ready", async () => {
 		console.error(`PF2e ReRoll Stats | Failed to expose API: ${e?.message || e}`);
 	}
     console.log(`%c${LOG_LABEL} Reroll Tracker ready!`, "color: Orange; font-weight: bold;");
+});
+
+Hooks.once("init", () => {
+    
+    // HIDDEN DATA: persistent roll data
+    game.settings.register(MODULE_NAME, "rollData", {
+        name: LT.settings.rollDataName(),
+        hint: LT.settings.rollDataHint(),
+        scope: "world", // Saved at the world level
+        config: false,  // Not exposed in the settings menu
+        type: Object,
+        default: {},
+    });
+
+    // HIDDEN DATA: Reusable world-scoped object to track any/all migrations
+	game.settings.register(MODULE_NAME, "migrationData", {
+		name: "PF2e Reroll: Migration Data",
+		scope: "world",
+		config: false,
+		type: Object,
+		default: {} 
+	});
+    
+	// Register settings to output to chat after a reroll
+    game.settings.register(MODULE_NAME, "outputToChat", {
+        name: LT.settings.outputToChatName(),
+        hint: LT.settings.outputToChatHint(),
+        scope: "world", 
+        config: true,  
+        type: Boolean,
+        default: false,
+		onChange: (value) => {
+            DL(`PF2E Reroll Stats | Setting outputToChat: ${value}`);
+        },
+		requiresReload: true
+	 });
+	
+	// Register settings to ignore minions
+    game.settings.register(MODULE_NAME, "ignoreMinion", {
+        name: LT.settings.ignoreMinionName(),
+        hint: LT.settings.ignoreMinionHint(),
+        scope: "world", 
+        config: true,  
+        type: Boolean,
+        default: true
+	 });
+
+     // Option to calculate reroll settings if xdy-workbench variant rule is enabled
+     game.settings.register(MODULE_NAME, "ignoreWorkbenchVariant", {
+        name: LT.settings.IgnoreWorkbenchVariantName(),
+        hint: LT.settings.IgnoreWorkbenchVariantHint(),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false
+     });
+	 
+    // Register settings for persistent data
+    game.settings.register(MODULE_NAME, "debugLevel", {
+        name: LT.settings.debugLevelName(),
+		hint: LT.settings.debugLevelHint(),
+		scope: "world",
+		config: true,
+		type: String,
+		choices: {
+			"none": LT.settings.debugLevelNone(),
+			"error": LT.settings.debugLevelErrors(),
+			"warn": LT.settings.debugLevelWarnings(),
+			"all": LT.settings.debugLevelAll()
+		},
+		default: "none", // Default to no logging
+		requiresReload: true
+	});
+	const debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
+	console.log(`%cPF2e ReRoll Stats | Debugging: ${debugLevel}`, "color: orange; font-weight: bold;");
+
 });
