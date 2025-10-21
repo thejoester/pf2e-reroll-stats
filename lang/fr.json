@@ -1,6 +1,7 @@
 {
   "reroll": {
     "save": "Enregistrer",
+    "close": "Fermer",
     "selectActor": "- Sélectionner l'acteur -",
     "journalTitle": "Statistiques de relance",
     "deleteSelected": "Ceci SUPPRIMERA toutes les données de jet du ou des jetons sélectionnés. Cette opération est IRRÉVERSIBLE !",
@@ -39,7 +40,8 @@
       "noActorsWithRerollData": "Aucun acteur avec des données relancées n'a été trouvé.",
       "countsDoNotAddUp": "Erreur : les données du nombre de relances ne s'additionnent pas correctement !",
       "successCountsExceedBetter": "Erreur : le nombre de succès ou de succès critiques ne peut pas dépasser le nombre de meilleurs lancers !",
-      "saved": "Les données de relance ont été enregistrées avec succès."
+      "saved": "Les données de relance ont été enregistrées avec succès.",
+      "onlyCharactersSupported": "Seuls les personnage sont pris en charge dans le cadre du suivi des relances."
     },
     "chat": {
       "speakerSingle": "Suivi des relances",
@@ -50,11 +52,12 @@
       "betterResultsLabel": "Meilleurs résultats :",
       "worseResultsLabel": "Pires résultats :",
       "sameResultsLabel": "Mêmes résultats :",
-      "successPercentageLabel": "Réussite de la relance :",
-      "criticalSuccessPercentageLabel": "Critique sur relance :",
+      "successPercentageLabel": "Succès sur la relance :",
+      "criticalSuccessPercentageLabel": "Critique sur la relance :",
+      "criticalFailPercentageLabel": "Échec critique sur la relance :",
       "totalRerollCountLabel": "Nombre total de relances :",
       "totalBetterResultsLabel": "Total des meilleurs résultats :",
-      "totalWorseResultsLabel": "Total de pires résultats :",
+      "totalWorseResultsLabel": "Total des pires résultats :",
       "totalSameResultsLabel": "Total des mêmes résultats :",
       "totalSuccessResultsLabel": "Pourcentage de succès :",
       "totalCriticalResultsLabel": "Pourcentage de succès critique :",
@@ -62,7 +65,9 @@
       "betterSuccessBtn": "Meilleur succès",
       "betterFailBtn": "Meilleur échec",
       "worseBtn": "Pire",
-      "sameBtn": "Même"
+      "sameBtn": "Même",
+      "critFailBtn": "Échec critique",
+      "noOutcomePrompt": "Aucun résultat détecté ! Veuillez choisir un résultat pour la relance."
     },
     "workbench": {
       "title": "Statistiques de relance bloquées",
@@ -70,6 +75,23 @@
       "fixIntro": "Pour résoudre ce problème, vous pouvez soit :",
       "step1": "Modifier le paramètre de <b>PF2e Workbench</b> et passer 'Règles maison Variante de points d'héroïsme' sur <b>Normal</b>.",
       "step2": "Désactiver les statistiques de relace."
+    },
+    "migration": {
+      "title": "VEUILLEZ LIRE : Migration des statistiques de relance PF2e !",
+      "question": "PF2e Reroll stats permet désormais de suivre les résultats des relances en cas d'échec critique. Souhaitez-vous archiver vos statistiques actuelles dans un journal archivé et les réinitialiser (recommandé) ou les conserver (mais les calculs d'échec critique ne seront pas justes) ?",
+      "archiveReset": "Archiver et réinitialiser (recommandé)",
+      "keep": "Conserver les statistiques actuelles",
+      "cancel": "Décider plus tard",
+      "note": "Vous pouvez toujours exporter vos statistiques actuelles au préalable. Cette invite ne s'affichera plus après votre choix.",
+      "archiveHeader": "Statistiques de relance archivées",
+      "archivedAt": "Dernière sauvegarde {when}",
+      "archivedAndReset": "Statistiques actuelles archivées et compteurs réinitialisés.",
+      "keptWarning": "Conserver des statistiques actuelles. Les pourcentages d'échecs critiques pourront ne pas être justes par rapport à vos totaux historiques.",
+      "errorArchive": "Erreur lors de l'archivage/réinitialisation des statistiques de relance. Voir la console."
+    },
+    "macro": {
+      "addRerollResult": "Ajouter un résultat de relance pour {name}",
+      "selectOutcome": "Sélectionner le résultat de la relance pour <strong>{name}</strong"
     }
   }
 }
