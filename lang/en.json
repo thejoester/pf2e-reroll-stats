@@ -82,7 +82,7 @@
             "fixIntro": "To fix this, you can either:",
             "step1": "Change the setting manually under <b>PF2e Workbench</b> and set \"Variant Hero Point house rules\" to <b>Normal</b>.",
             "step2": "Disable ReRoll Stats.",
-            "step3": "Enable the setting in <strong>PF2e Reroll Stats</string to ignore the Workbench Variant Hero Point rules and continue tracking reroll stats (stats may be inaccurate)."
+            "step3": "Enable the setting in <strong>PF2e Reroll Stats</strong> to ignore the Workbench Variant Hero Point rules and continue tracking reroll stats (stats may be inaccurate)."
         },
         "migration": {
 			"title": "PLEASE READ: PF2e Reroll Stats Migration!",

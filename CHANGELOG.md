@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.6.1] - 2025-10-21
+### Fixed
+- fixed typo in en.json
+
 ## [1.6.0] - 2025-10-21
 ### Added
 - Added support for pf2e workbench hero point variant rules. 
