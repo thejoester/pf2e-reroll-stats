@@ -1,0 +1,32 @@
+{
+  "name": "Backup Reroll Data",
+  "type": "script",
+  "_id": "j83UIpUOP4vXXWd1",
+  "author": "EpqDCtSCbVNM4wPj",
+  "img": "icons/svg/up.svg",
+  "scope": "global",
+  "command": "pf2eRerollStats.macro_backupRerollData();",
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0,
+    "EpqDCtSCbVNM4wPj": 3
+  },
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null,
+    "coreVersion": "13.350",
+    "systemId": "pf2e",
+    "systemVersion": "7.6.3",
+    "createdTime": 1760899689386,
+    "modifiedTime": 1760946464754,
+    "lastModifiedBy": "EpqDCtSCbVNM4wPj"
+  },
+  "_key": "!macros!j83UIpUOP4vXXWd1"
+}

@@ -1,8 +1,8 @@
 {
     "reroll": {
-
         "save": "Save",
         "close": "Close",
+        "cancel": "Cancel",
         "selectActor": "- Select Actor -",
         "journalTitle": "Reroll Stats",
         "deleteSelected": "This will DELETE all roll data for the selected token(s). This CANNOT be undone!",
@@ -19,7 +19,9 @@
             "debugLevelNone": "None",
             "debugLevelErrors": "Errors",
             "debugLevelWarnings": "Warnings",
-            "debugLevelAll": "All"
+            "debugLevelAll": "All",
+            "IgnoreWorkbenchVariantName": "Still Track Rerolls with PF2e Workbench Variant Hero Point Rules enabled",
+            "IgnoreWorkbenchVariantHint": "If PF2e Workbench is active and the Variant Hero Point house rules are enabled, enabling this option will still track reroll stats. Disabling it will skip tracking when those rules are active. Be aware that the stats may be inaccurate if those rules are enabled."
         },
         "dialog": {
             "titleConfirm": "Confirmation",
@@ -27,7 +29,8 @@
             "yes": "Yes",
             "no": "No",
             "editTitle": "Edit Reroll Data",
-            "saveChanges": "Save Changes"
+            "saveChanges": "Save Changes",
+            "ok": "OK"
         },                
         "notifications": {
             "noTokenSelected": "No token selected. Please select a token.",
@@ -42,7 +45,10 @@
             "countsDoNotAddUp": "Error: Reroll count data does not add up correctly!",
             "successCountsExceedBetter": "Error: Success or Crit Success count cannot exceed Better Rolls count!",
             "saved": "Reroll data saved successfully.",
-            "onlyCharactersSupported": "Only characters are supported for reroll tracking."
+            "onlyCharactersSupported": "Only characters are supported for reroll tracking.",
+            "gmOnly": "Only the GM can run this.",
+            "noFileSelected": "No file selected.",
+            "invalidJson": "Selected file is not valid JSON."
         },
         "chat":{
             "speakerSingle": "Reroll Tracker",
@@ -75,7 +81,8 @@
             "warning": "The setting in PF2e Workbench to use Variant Hero Point house rules is enabled and will cause the stats to be incorrect.",
             "fixIntro": "To fix this, you can either:",
             "step1": "Change the setting manually under <b>PF2e Workbench</b> and set \"Variant Hero Point house rules\" to <b>Normal</b>.",
-            "step2": "Disable ReRoll Stats."
+            "step2": "Disable ReRoll Stats.",
+            "step3": "Enable the setting in <strong>PF2e Reroll Stats</string to ignore the Workbench Variant Hero Point rules and continue tracking reroll stats (stats may be inaccurate)."
         },
         "migration": {
 			"title": "PLEASE READ: PF2e Reroll Stats Migration!",
@@ -92,8 +99,18 @@
         },
         "macro": {
             "addRerollResult": "Add ReRoll Result for {name}",
-            "selectOutcome": "Select Reroll Outcome for <strong>{name}</strong"
+            "selectOutcome": "Select Reroll Outcome for <strong>{name}</strong",
+            "backupFailed": "Failed to save reroll data backup.",
+            "backupSaved": "Reroll data backup saved.",
+            "restoreTitle": "Import Reroll Backup",
+            "restoreWarning": "Importing a backup will OVERWRITE all existing reroll stats for this world.",
+            "selectBackupFile":  "Select a .json backup file exported by this module.",
+            "chooseFile": "Choose Backup File",
+            "confirmImport": "Confirm Import",
+            "overwriteCounts": "This will overwrite data for up to {count} actors.",
+            "invalidBackupShape": "Backup file shape not recognized.",
+            "importComplete": "Reroll backup imported.",
+            "importFailed": "Failed to import reroll backup."
         }
-
     }
 }

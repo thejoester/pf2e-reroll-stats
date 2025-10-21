@@ -13,6 +13,21 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+    
+    # pin Node + enable npm cache
+      - name: Setup Node (pin)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
+          cache: 'npm'
+
+    # make sure @foundryvtt scope resolves to npmjs.org every run
+      - name: NPM sanity + registry
+        run: |
+          npm -v
+          npm config set registry https://registry.npmjs.org/
+          npm config set @foundryvtt:registry https://registry.npmjs.org/
+          npm ping
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -23,7 +38,7 @@ jobs:
         id: get_version
         uses: battila7/get-version-action@v2
 
-      # Use tagged manifest for prerelease; latest for stable
+    # Use tagged manifest for prerelease; latest for stable
       - name: Set manifest URL for channel (stable vs prerelease)
         id: set_manifest
         run: |
@@ -43,26 +58,37 @@ jobs:
           manifest: ${{ steps.set_manifest.outputs.manifest_url }}
           download: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/pf2e_reroll_stats.zip
 
-      # --- Build packs from committed _source -------------------------------
+    # --- Build packs from committed _source 
+      - name: Install Foundry CLI (robust)
+        shell: bash
+        run: |
+          set -e
+          n=0
+          until [ $n -ge 3 ]; do
+            if npm i -D @foundryvtt/foundryvtt-cli@3 --no-audit --fund=false; then
+              ok=1; break
+            fi
+            n=$((n+1)); echo "npm install retry $n..."; sleep 5
+          done
+          if [ -z "${ok:-}" ]; then
+            echo "npm install failed; attempting direct tarball for foundryvtt-cli…"
+            npm i -D https://registry.npmjs.org/@foundryvtt/foundryvtt-cli/-/foundryvtt-cli-3.0.0.tgz
+          fi
 
-      - name: Install Foundry CLI
-        run: npm i -D @foundryvtt/foundryvtt-cli
-
-      # Optional: fail fast if _source is missing or dupes exist
+    # Optional: fail fast if _source is missing or dupes exist
       - name: Verify extracted packs (no dupes)
         run: node _build/verify-extracted-packs.mjs
 
       - name: Compile packs from _source
         run: node _build/compile-all-packs.mjs
 
-      # Useful tree dump for debugging
+    # Useful tree dump for debugging
       - name: Show packs tree
         run: |
           echo "==== packs tree ===="
           find packs -maxdepth 2 -type f -printf "%p (%k KB)\n" | sort
 
-      # --- Package & publish ------------------------------------------------
-
+    # --- Package & publish 
       - name: Create Module Archive
         run: |
           mkdir -p dist
