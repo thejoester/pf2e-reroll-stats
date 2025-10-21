@@ -2,6 +2,7 @@
   "reroll": {
     "save": "Enregistrer",
     "close": "Fermer",
+    "cancel": "Annuler",
     "selectActor": "- Sélectionner l'acteur -",
     "journalTitle": "Statistiques de relance",
     "deleteSelected": "Ceci SUPPRIMERA toutes les données de jet du ou des jetons sélectionnés. Cette opération est IRRÉVERSIBLE !",
@@ -18,7 +19,9 @@
       "debugLevelNone": "Aucun",
       "debugLevelErrors": "Erreurs",
       "debugLevelWarnings": "Avertissements",
-      "debugLevelAll": "Tout"
+      "debugLevelAll": "Tout",
+      "IgnoreWorkbenchVariantName": "Suivez toujours les relances avec la variante des règles de points d'héroïsme de Workbench activées",
+      "IgnoreWorkbenchVariantHint": "Si Workbench est actif et que la variante de règles de point d'héroïsme est activée, activer cette option permettra de suivre les statistiques des relances. La désactiver ignorera le suivi lorsque ces règles sont actives. Attention, les statistiques peuvent être inexactes si ces règles sont activées."
     },
     "dialog": {
       "titleConfirm": "Confirmation",
@@ -26,7 +29,8 @@
       "yes": "Oui",
       "no": "Non",
       "editTitle": "Modifier les données de relance",
-      "saveChanges": "Enregistrer les modifications"
+      "saveChanges": "Enregistrer les modifications",
+      "ok": "OK"
     },
     "notifications": {
       "noTokenSelected": "Aucun jeton sélectionné. Veuillez sélectionner un jeton.",
@@ -41,7 +45,10 @@
       "countsDoNotAddUp": "Erreur : les données du nombre de relances ne s'additionnent pas correctement !",
       "successCountsExceedBetter": "Erreur : le nombre de succès ou de succès critiques ne peut pas dépasser le nombre de meilleurs lancers !",
       "saved": "Les données de relance ont été enregistrées avec succès.",
-      "onlyCharactersSupported": "Seuls les personnage sont pris en charge dans le cadre du suivi des relances."
+      "onlyCharactersSupported": "Seuls les personnage sont pris en charge dans le cadre du suivi des relances.",
+      "gmOnly": "Seul le MJ peut exécuter ceci.",
+      "noFileSelected": "Aucun fichier sélectionné.",
+      "invalidJson": "Le fichier sélectionné n'est pas un JSON valide."
     },
     "chat": {
       "speakerSingle": "Suivi des relances",
@@ -74,7 +81,8 @@
       "warning": "Le paramètre dans PF2e Workbench pour utiliser les règles maison de la variante de points d'héroïsme est activé et entraînera des statistiques incorrectes.",
       "fixIntro": "Pour résoudre ce problème, vous pouvez soit :",
       "step1": "Modifier le paramètre de <b>PF2e Workbench</b> et passer 'Règles maison Variante de points d'héroïsme' sur <b>Normal</b>.",
-      "step2": "Désactiver les statistiques de relace."
+      "step2": "Désactiver les statistiques de relace.",
+      "step3": "Activer le paramètre<strong>Statistiques de Lancer PF2</strong> pour ignorer les Variantes de règles de Point d'héroïsme de Workbench et poursuivre l'enregistrement des statistiques (les statistiques pourraient être inexactes)."
     },
     "migration": {
       "title": "VEUILLEZ LIRE : Migration des statistiques de relance PF2e !",
@@ -91,7 +99,18 @@
     },
     "macro": {
       "addRerollResult": "Ajouter un résultat de relance pour {name}",
-      "selectOutcome": "Sélectionner le résultat de la relance pour <strong>{name}</strong"
+      "selectOutcome": "Sélectionner le résultat de la relance pour <strong>{name}</strong",
+      "backupFailed": "Échec de l'enregistrement de la sauvegarde des données des relances.",
+      "backupSaved": "La sauvegarde des données des relances a été enregistrée.",
+      "restoreTitle": "Importer une sauvegarde des relances",
+      "restoreWarning": "L'importation d'une sauvegarde ÉCRASERA toutes les statistiques des relances existantes pour ce monde.",
+      "selectBackupFile": "Sélectionnez un fichier de sauvegarde au format .json exporté par ce module.",
+      "chooseFile": "Choisir le fichier de sauvegarde",
+      "confirmImport": "Confirmer l'importation",
+      "overwriteCounts": "Cela écrasera les données de {count} acteurs maximum.",
+      "invalidBackupShape": "La forme du fichier de sauvegarde n'est pas reconnue.",
+      "importComplete": "La sauvegarde des relances a été importée.",
+      "importFailed": "Échec de l'importation de la sauvegarde des relances."
     }
   }
 }
