@@ -3,9 +3,6 @@ A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls.
 
 **Note:** The intent for this is to track Hero Point rerolls, but this will also track if a character also rerolls using the "Reroll and keep [new/lower/higher] result."
 
-> [!IMPORTANT]
-> The compatibility issue with [PF2e Workbench](https://github.com/xdy/xdy-pf2e-workbench) has now been resolved! Better/Worse/Same results are judged based on die face, but the outcome stats (Success/Fail/Crit) are based on outcome after variant rule. 
-
 ### How To Use
 The module will automatically track re-rolls made by players and add them to a Journal entry in the base journal folder named "ReRoll Stats". 
 
