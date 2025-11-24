@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.6.2] - 2025-11-24
+### Fixed
+- Fixed bug causing the first roll made by an actor incorrectly register as "same" roll. 
+
 ## [1.6.1] - 2025-10-21
 ### Fixed
 - fixed typo in en.json
