@@ -7,7 +7,6 @@ const SESSION_KEY_WB_WARN = `${MODULE_NAME}.wbWarnShown`;
 //log to console
 console.log("%cPF2e ReRoll Stats | reroll.js loaded", "color: orange; font-weight: bold;");
 
-
 // Function for debugging and logging
 export function DL(intLogType, stringLogMsg, objObject = null) {
 	// Handle the case where the first argument is a string
@@ -94,8 +93,6 @@ export function DL(intLogType, stringLogMsg, objObject = null) {
 
 // Global variable for tracking roll data by actor
 let rollDataByActor = {};
-
-
 
 async function migration_critFailData() {
 	try {
@@ -1337,8 +1334,20 @@ Hooks.on("createChatMessage", async (message) => {
         return;
     }
 
-    // Retrieve actor stats
-    const actorData = rollDataByActor[actorId] || {};
+    // Retrieve or initialize actor stats
+	if (!rollDataByActor[actorId]) {
+		rollDataByActor[actorId] = {
+			originalRoll: null,
+			rerollCount: 0,
+			betterCount: 0,
+			worseCount: 0,
+			sameCount: 0,
+			successCount: 0,
+			critSuccessCount: 0,
+			critFailCount: 0
+		};
+	}
+	const actorData = rollDataByActor[actorId];
 
     // Check if it is a ReRoll
     if (context?.isReroll) {
