@@ -1,0 +1,32 @@
+{
+  "name": "Delete Actor ReRoll Data",
+  "type": "script",
+  "flags": {
+    "macro-wheel": {
+      "activeCondition": ""
+    }
+  },
+  "command": "/*\n\tThis macro will DELETE all reroll data for one actor chosen from a dropdown.\n\tIt only lists actors that currently have meaningful reroll data stored.\n\n\t!!! CAN NOT BE UNDONE !!!\n*/\n\nconst MODULE_ID = \"pf2e-reroll-stats\";\n\nif (!game.user?.isGM) {\n\tui.notifications.warn(\"Only a GM can delete reroll data.\");\n\treturn;\n}\n\nfunction hasMeaningfulRerollData(stats) {\n\tif (!stats) return false;\n\n\treturn (\n\t\t(stats.rerollCount ?? 0) > 0 ||\n\t\t(stats.betterCount ?? 0) > 0 ||\n\t\t(stats.worseCount ?? 0) > 0 ||\n\t\t(stats.sameCount ?? 0) > 0 ||\n\t\t(stats.successCount ?? 0) > 0 ||\n\t\t(stats.critSuccessCount ?? 0) > 0 ||\n\t\t(stats.critFailCount ?? 0) > 0\n\t);\n}\n\nconst rollData = foundry.utils.deepClone(game.settings.get(MODULE_ID, \"rollData\") || {});\n\nconst actorEntries = Object.entries(rollData)\n\t.filter(([actorId, actorData]) => {\n\t\tconst actor = game.actors.get(actorId);\n\t\tif (!actor) return false;\n\t\tif (!hasMeaningfulRerollData(actorData)) return false;\n\t\treturn true;\n\t})\n\t.map(([actorId, actorData]) => {\n\t\tconst actor = game.actors.get(actorId);\n\t\treturn {\n\t\t\tactorId,\n\t\t\tactorName: actor.name,\n\t\t\tactorData\n\t\t};\n\t})\n\t.sort((a, b) => a.actorName.localeCompare(b.actorName));\n\nif (!actorEntries.length) {\n\tui.notifications.info(\"No actors with reroll data found.\");\n\treturn;\n}\n\nconst optionsHtml = actorEntries.map((entry) => {\n\treturn `<option value=\"${entry.actorId}\">${entry.actorName}</option>`;\n}).join(\"\");\n\nfunction buildPreview(actorId) {\n\tconst data = rollData[actorId];\n    const actorName = game.actors.get(actorId)?.name ?? actorId; // get actor name\n\tif (!data) {\n\t\treturn `<div>No reroll data found for the selected actor.</div>`;\n\t}\n\n\treturn `\n        <div><h4>Reroll data for ${actorName}:</h4></div>\n\t\t<div><strong>Reroll Count:</strong> ${data.rerollCount ?? 0}</div>\n\t\t<div><strong>Better Results:</strong> ${data.betterCount ?? 0}</div>\n\t\t<div><strong>Worse Results:</strong> ${data.worseCount ?? 0}</div>\n\t\t<div><strong>Same Results:</strong> ${data.sameCount ?? 0}</div>\n\t\t<div><strong>Success Count:</strong> ${data.successCount ?? 0}</div>\n\t\t<div><strong>Crit Success Count:</strong> ${data.critSuccessCount ?? 0}</div>\n\t\t<div><strong>Crit Fail Count:</strong> ${data.critFailCount ?? 0}</div>\n\t`;\n}\n\nconst content = `\n<form>\n\t<div class=\"form-group\">\n\t\t<label for=\"reroll-actor-select\">Actor</label>\n\t\t<select id=\"reroll-actor-select\" name=\"actorId\" style=\"width: 100%;\">\n\t\t\t${optionsHtml}\n\t\t</select>\n\t</div>\n\n\t<div\n\t\tid=\"reroll-actor-preview\"\n\t\tstyle=\"border: 1px solid var(--color-border-light-primary);  min-height: 8.5em;\"\n\t>\n\t\t${buildPreview(actorEntries[0].actorId)}\n\t</div>\n\n\t<p style=\"margin-top: 1rem; color: var(--color-text-dark-secondary);\">\n\t\tThis will permanently delete the selected actor's reroll data entry.\n\t</p>\n</form>\n`;\n\nconst dialog = new foundry.applications.api.DialogV2({\n\twindow: {\n\t\ttitle: \"Delete Actor Reroll Data\"\n\t},\n\tcontent,\n\tbuttons: [\n\t\t{\n\t\t\taction: \"delete\",\n\t\t\tlabel: \"Delete\",\n\t\t\ticon: \"fas fa-trash\",\n\t\t\tcallback: async (event, button, dialogRef) => {\n\t\t\t\tconst form = dialogRef.element.querySelector(\"form\");\n\t\t\t\tconst formData = new FormData(form);\n\t\t\t\tconst actorId = formData.get(\"actorId\");\n\n\t\t\t\tif (!actorId || !rollData[actorId]) {\n\t\t\t\t\tui.notifications.warn(\"Please select an actor with reroll data.\");\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tconst actorName = game.actors.get(actorId)?.name ?? actorId;\n\n\t\t\t\tconst confirmed = await foundry.applications.api.DialogV2.confirm({\n\t\t\t\t\twindow: {\n\t\t\t\t\t\ttitle: \"Confirm Delete\"\n\t\t\t\t\t},\n\t\t\t\t\tcontent: `<p>This will DELETE the reroll data entry for <strong>${actorName}</strong>. This cannot be undone.</p>`\n\t\t\t\t});\n\n\t\t\t\tif (!confirmed) return;\n\n\t\t\t\tdelete rollData[actorId];\n\t\t\t\tawait game.settings.set(MODULE_ID, \"rollData\", rollData);\n\n\t\t\t\tconst api = game.modules.get(MODULE_ID)?.api ?? globalThis.pf2eRerollStats;\n\t\t\t\tif (api?.compileActorStatsToJournal) {\n\t\t\t\t\tawait api.compileActorStatsToJournal();\n\t\t\t\t}\n\n\t\t\t\tdialogRef.close();\n\t\t\t\tui.notifications.info(`Deleted reroll data for ${actorName}.`);\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\taction: \"cancel\",\n\t\t\tlabel: \"Cancel\",\n\t\t\ticon: \"fas fa-times\"\n\t\t}\n\t]\n});\n\ndialog.render(true);\n\nHooks.once(\"renderDialogV2\", (app, html) => {\n\tif (app !== dialog) return;\n\n\tconst select = html.querySelector(\"#reroll-actor-select\");\n\tconst preview = html.querySelector(\"#reroll-actor-preview\");\n\n\tif (!select || !preview) {\n\t\tui.notifications.warn(\"Could not initialize reroll preview UI.\");\n\t\treturn;\n\t}\n\n\tconst refreshPreview = () => {\n\t\tpreview.innerHTML = buildPreview(select.value);\n\t};\n\n\tselect.addEventListener(\"change\", refreshPreview);\n\trefreshPreview();\n});",
+  "img": "icons/magic/time/arrows-circling-green.webp",
+  "author": "CLMiGpsYVSTK4VM8",
+  "scope": "global",
+  "folder": null,
+  "ownership": {
+    "default": 0,
+    "CLMiGpsYVSTK4VM8": 3
+  },
+  "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "coreVersion": "13.351",
+    "systemId": "pf2e",
+    "systemVersion": "6.7.2",
+    "createdTime": 1733578138705,
+    "modifiedTime": 1773544258914,
+    "lastModifiedBy": "sDmTHDFOKZoe85XE",
+    "exportSource": null
+  },
+  "_id": "Ebhm5Q11zYOnOoXF",
+  "sort": 300000,
+  "_key": "!macros!Ebhm5Q11zYOnOoXF"
+}

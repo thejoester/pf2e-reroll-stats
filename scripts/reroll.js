@@ -386,37 +386,99 @@ async function showConfirmationDialog(message) {
 
 // Checks if an actor is valid for reroll tracking, Returns true if valid, false otherwise
 function isValidActorForRerollTracking(actor) {
-    // Check if the actor is a character
-    const isCharacter = actor.type === "character";
+	if (!actor) {
+		DL(2, "isValidActorForRerollTracking(): no actor provided");
+		return false;
+	}
+
+	// Only track actual character actors
+	const isCharacter = actor.type === "character";
+	if (!isCharacter) {
+		DL(`isValidActorForRerollTracking(): skipping ${actor.name} because type is ${actor.type}`);
+		return false;
+	}
+
+	// Only track player characters
+	if (!actor.hasPlayerOwner) {
+		DL(`isValidActorForRerollTracking(): skipping ${actor.name} because it has no player owner`);
+		return false;
+	}
 
 	// Check if we are ignoring minions in settings
-	const ignoreMinion = game.settings.get(MODULE_NAME, "ignoreMinion");
-	if (!ignoreMinion) {
-		return isCharacter;
-	} else {
-	
+	//const ignoreMinion = game.settings.get(MODULE_NAME, "ignoreMinion");
+	//if (!ignoreMinion) {
+	//	return true;
+	//} else {
 		// Ensure the actor has traits and check if the 'minion' trait exists
-		const traits = actor.system.traits?.value || [];
-		DL(`Actor Traits: `, traits);
-
+		const traits = actor.system?.traits?.value || [];
 		const hasMinionTrait = traits.includes("minion");
-		DL(`Has Minion Trait: ${hasMinionTrait}`);
-		
-		// Return true if it's a character and not a minion
-		return isCharacter && !hasMinionTrait;
+
+		//DL(`isValidActorForRerollTracking(): ${actor.name} | ignoreMinion=${ignoreMinion} | hasMinionTrait=${hasMinionTrait}`);
+
+		// Return true if it's a player-owned character and not a minion
+		return !hasMinionTrait;
+	//}
+}
+
+// Checks if the stats object has any meaningful data (non-zero counts) to determine if it should be kept or pruned
+function hasMeaningfulRerollData(stats) {
+	if (!stats) return false;
+
+	return (
+		(stats.rerollCount ?? 0) > 0 ||
+		(stats.betterCount ?? 0) > 0 ||
+		(stats.worseCount ?? 0) > 0 ||
+		(stats.sameCount ?? 0) > 0 ||
+		(stats.successCount ?? 0) > 0 ||
+		(stats.critSuccessCount ?? 0) > 0 ||
+		(stats.critFailCount ?? 0) > 0
+	);
+}
+
+// Prune invalid or empty entries from rollDataByActor, such as those for deleted actors or actors that no longer meet tracking criteria. Returns the number of entries removed.
+function pruneInvalidRollData() {
+	let removedCount = 0;
+	const cleaned = {};
+
+	for (const [actorId, stats] of Object.entries(rollDataByActor || {})) {
+		const actor = game.actors.get(actorId);
+
+		if (!actor) {
+			DL(2, `pruneInvalidRollData(): removing missing actor ${actorId}`);
+			removedCount++;
+			continue;
+		}
+
+		if (!isValidActorForRerollTracking(actor)) {
+			DL(2, `pruneInvalidRollData(): removing invalid actor ${actor.name}`);
+			removedCount++;
+			continue;
+		}
+
+		if (!hasMeaningfulRerollData(stats)) {
+			DL(2, `pruneInvalidRollData(): removing zeroed reroll data for ${actor.name}`);
+			removedCount++;
+			continue;
+		}
+
+		cleaned[actorId] = stats;
 	}
+
+	rollDataByActor = cleaned;
+	DL(`pruneInvalidRollData(): removed ${removedCount} invalid or empty entries`);
+
+	return removedCount;
 }
 
 // Save rollDataByActor to settings
 async function saveRollData() {
-    // Only save data if the user is the GM
-    if (game.user.isGM) {
-        await game.settings.set(MODULE_NAME, "rollData", rollDataByActor);
-        DL("Reroll data saved.");
-		
-    } else {
-        DL("Player cannot save reroll data.");
-    }
+	if (game.user.isGM) {
+		pruneInvalidRollData();
+		await game.settings.set(MODULE_NAME, "rollData", rollDataByActor);
+		DL("saveRollData(): reroll data saved.");
+	} else {
+		DL("saveRollData(): player cannot save reroll data.");
+	}
 }
 
 // Function to display actor stats in chat
@@ -480,7 +542,9 @@ function displayActorStatsInChat() {
 
 // Function to compile actor stats into a journal entry with totals and pages
 async function compileActorStatsToJournal(journalName = LT.journalTitle()) {
-    const journalWhen = new Date().toLocaleString();
+    pruneInvalidRollData(); // Clean data before compiling
+
+    const journalWhen = new Date().toLocaleString(); 
     let journalContent = `
         <h1>${LT.journalTitle()}</h1>
         <p>${LT.migration.archivedAt({ when: journalWhen })}</p>`;
@@ -1334,7 +1398,12 @@ Hooks.on("createChatMessage", async (message) => {
         return;
     }
 
-    // Retrieve or initialize actor stats
+    if (!isValidActorForRerollTracking(actor)) {
+		DL(`createChatMessage(): ignoring ${actor.name} because actor is not valid for reroll tracking`);
+		return;
+	}
+
+	// Retrieve or initialize actor stats
 	if (!rollDataByActor[actorId]) {
 		rollDataByActor[actorId] = {
 			originalRoll: null,
@@ -1346,6 +1415,7 @@ Hooks.on("createChatMessage", async (message) => {
 			critSuccessCount: 0,
 			critFailCount: 0
 		};
+		DL(`createChatMessage(): initialized reroll data for ${actor.name}`);
 	}
 	const actorData = rollDataByActor[actorId];
 
@@ -1583,6 +1653,15 @@ Hooks.on("renderChatMessage", async (message, html, data) => {
 Hooks.once("ready", async () => {
     // Initialize rollDataByActor from game settings or as an empty object
     rollDataByActor = game.settings.get(MODULE_NAME, "rollData") || {};
+
+    // Prune any entries that no longer correspond to valid actors in the world
+    if (game.user.isGM) { // Only the GM should modify the stored data
+		const removedCount = pruneInvalidRollData();
+		if (removedCount > 0) {
+			await game.settings.set(MODULE_NAME, "rollData", rollDataByActor);
+			DL(`ready(): pruned ${removedCount} invalid reroll entries from stored data`);
+		}
+	}
     
     //Make our pf2e.reroll hook run before Workbench
     try {
@@ -1711,7 +1790,7 @@ Hooks.once("init", () => {
 			"all": LT.settings.debugLevelAll()
 		},
 		default: "none", // Default to no logging
-		requiresReload: true
+		requiresReload: false
 	});
 	const debugLevel = game.settings.get(MODULE_NAME, "debugLevel");
 	console.log(`%cPF2e ReRoll Stats | Debugging: ${debugLevel}`, "color: orange; font-weight: bold;");

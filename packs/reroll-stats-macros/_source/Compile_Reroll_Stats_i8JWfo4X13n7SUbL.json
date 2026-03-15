@@ -6,7 +6,7 @@
       "activeCondition": ""
     }
   },
-  "command": "/*\n\nThis Macro will compile all reroll stats for actors and create a journal entry named \"Reroll tracker Stats\" in the base Journal directory.\n\n*/\nif (game.user?.isGM) {\n  const api = game.modules.get(\"pf2e-reroll-stats\")?.api ?? globalThis.pf2eRerollStats;\n  if (api?.compileActorStatsToJournal) {\n    api.compileActorStatsToJournal();\n    // Replace \"Your Journal Name\" with the name of the journal entry\n    const journalName = \"Reroll Stats\";\n    \n    // Find the journal entry by name\n    const journal = game.journal.contents.find(j => j.name === journalName);\n    \n    // If the journal entry exists, show it\n    if (journal) {\n      journal.sheet.render(true);\n    } else {\n      console.error(`Journal entry with name \"${journalName}\" not found.`);\n    }\n  } else {\n    ui.notifications.error(\"ReRoll Stats module API not available.\");\n  }\n} else {\n  ui.notifications.warn(\"Only a GM can open the Reroll Editor.\");\n}",
+  "command": "/*\n\nThis Macro will compile all reroll stats for actors and create a journal entry named \"Reroll Stats\" in the base Journal directory.\n\n*/\nif (game.user?.isGM) {\n\tconst api = game.modules.get(\"pf2e-reroll-stats\")?.api ?? globalThis.pf2eRerollStats;\n\tif (api?.compileActorStatsToJournal) {\n\t\tawait api.compileActorStatsToJournal();\n\n\t\tconst journalName = \"Reroll Stats\";\n\t\tconst journal = game.journal.contents.find(j => j.name === journalName);\n\n\t\tif (journal) {\n\t\t\tjournal.sheet.render(true);\n\t\t} else {\n\t\t\tui.notifications.error(`Journal entry with name \"${journalName}\" not found.`);\n\t\t}\n\t} else {\n\t\tui.notifications.error(\"ReRoll Stats module API not available.\");\n\t}\n} else {\n\tui.notifications.warn(\"Only a GM can open the Reroll Editor.\");\n}",
   "img": "icons/sundries/documents/document-bound-white-tan.webp",
   "author": "CLMiGpsYVSTK4VM8",
   "scope": "global",
@@ -18,12 +18,12 @@
   "_stats": {
     "compendiumSource": null,
     "duplicateSource": null,
-    "coreVersion": "13.350",
+    "coreVersion": "13.351",
     "systemId": "pf2e",
     "systemVersion": "6.7.2",
     "createdTime": 1733576827255,
-    "modifiedTime": 1760684729234,
-    "lastModifiedBy": "EpqDCtSCbVNM4wPj",
+    "modifiedTime": 1773542743016,
+    "lastModifiedBy": "sDmTHDFOKZoe85XE",
     "exportSource": null
   },
   "_id": "i8JWfo4X13n7SUbL",

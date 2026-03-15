@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.3] - 2026-03-14
+### Fixed
+- Fixed bug that added non player characters into reroll journal. 
+### Changed
+- Changed Delete ReRoll data macro to allow to select which actor from a dropdown and delete reroll data for. 
+
 ## [1.6.2] - 2025-11-24
 ### Fixed
 - Fixed bug causing the first roll made by an actor incorrectly register as "same" roll. 
