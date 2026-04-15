@@ -1,0 +1,25 @@
+{
+  "reroll": {
+    "save": "Ahorrar",
+    "cancel": "Cancelar",
+    "selectActor": "- Seleccionar actor -",
+    "journalTitle": "Estadísticas de relanzamiento",
+    "settings": {
+    },
+    "dialog": {
+    },
+    "notifications": {
+    },
+    "chat": {
+      "successPercentageLabel": "Reintento exitoso:",
+      "betterCritBtn": "Éxito crítico"
+    },
+    "workbench": {
+    },
+    "migration": {
+      "archivedAndReset": "Estadísticas archivadas y contadores reiniciados."
+    },
+    "macro": {
+    }
+  }
+}
