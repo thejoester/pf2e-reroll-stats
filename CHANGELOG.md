@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0] - 2026-07-31
+### Added
+- New setting "Whisper stats to GM for secret checks": when enabled, the reroll stats chat message is whispered to the GM instead of posted publicly if the reroll was for a secret (GM blind) check.
+### Fixed
+- Fixed PF2e Toolbelt Target Helper saves and rerolls not being tracked when a player rolled their own save from the chat card. 
+### Changed
+- Verified compatibility with Foundry v14.
+
 ## [1.6.3] - 2026-03-14
 ### Fixed
 - Fixed bug that added non player characters into reroll journal. 

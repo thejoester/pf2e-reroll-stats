@@ -91,7 +91,7 @@ export function DL(intLogType, stringLogMsg, objObject = null) {
 	}
 }
 
-// Global variable for tracking roll data by actor
+// Roll data by actor
 let rollDataByActor = {};
 
 async function migration_critFailData() {
@@ -194,7 +194,7 @@ async function migration_critFailData() {
 }
 
 // Handle reroll events
-async function handleRerollEvent(actor, originalTotal, rerollTotal, outcome) {
+async function handleRerollEvent(actor, originalTotal, rerollTotal, outcome, isSecret = false) {
     if (!game.user.isGM) return; // Only the GM tracks rerolls
 	
 	if (!actor) { // make sure an actor exists for token
@@ -329,6 +329,7 @@ async function handleRerollEvent(actor, originalTotal, rerollTotal, outcome) {
 
 	// Optional chat output with color-coding like your createChatMessage path
 	const outputToChat = game.settings.get(MODULE_NAME, "outputToChat");
+	const whisperSecretChat = game.settings.get(MODULE_NAME, "whisperSecretChat");
 	if (outputToChat) {
 
         // Prepare the chat message content
@@ -344,11 +345,16 @@ async function handleRerollEvent(actor, originalTotal, rerollTotal, outcome) {
                     <li style="${critFailColor}"><strong>${LT.chat.criticalFailPercentageLabel()}</strong> ${actorData.critFailCount} (${critFailPct})</li>
 				</ul>
 			`;
-		await ChatMessage.create({
+		const chatData = {
 			user: game.user.id,
 			content: messageContent,
 			speaker: { alias: LT.chat.speakerSingle() }
-		});
+		};
+		// Secret check: keep the result GM-only
+		if (isSecret && whisperSecretChat) {
+			chatData.whisper = ChatMessage.getWhisperRecipients("GM").map(u => u.id);
+		}
+		await ChatMessage.create(chatData);
 	}
 
     // reset Colors for chat output
@@ -363,7 +369,7 @@ async function handleRerollEvent(actor, originalTotal, rerollTotal, outcome) {
 	await compileActorStatsToJournal();
 }
 
-// Helper to show a confirmation dialog and return a promise that resolves to true/false
+// Confirmation dialog, resolves true/false
 async function showConfirmationDialog(message) {
   return new Promise((resolve) => {
     new Dialog({
@@ -404,20 +410,12 @@ function isValidActorForRerollTracking(actor) {
 		return false;
 	}
 
-	// Check if we are ignoring minions in settings
-	//const ignoreMinion = game.settings.get(MODULE_NAME, "ignoreMinion");
-	//if (!ignoreMinion) {
-	//	return true;
-	//} else {
-		// Ensure the actor has traits and check if the 'minion' trait exists
-		const traits = actor.system?.traits?.value || [];
-		const hasMinionTrait = traits.includes("minion");
+	// Ensure the actor has traits and check if the 'minion' trait exists
+	const traits = actor.system?.traits?.value || [];
+	const hasMinionTrait = traits.includes("minion");
 
-		//DL(`isValidActorForRerollTracking(): ${actor.name} | ignoreMinion=${ignoreMinion} | hasMinionTrait=${hasMinionTrait}`);
-
-		// Return true if it's a player-owned character and not a minion
-		return !hasMinionTrait;
-	//}
+	// Return true if it's a player-owned character and not a minion
+	return !hasMinionTrait;
 }
 
 // Checks if the stats object has any meaningful data (non-zero counts) to determine if it should be kept or pruned
@@ -481,7 +479,7 @@ async function saveRollData() {
 	}
 }
 
-// Function to display actor stats in chat
+// Display actor stats in chat
 function displayActorStatsInChat() {
     
 	// Get the selected token's actor
@@ -540,7 +538,7 @@ function displayActorStatsInChat() {
     });
 }
 
-// Function to compile actor stats into a journal entry with totals and pages
+// Compile actor stats into a journal entry with totals
 async function compileActorStatsToJournal(journalName = LT.journalTitle()) {
     pruneInvalidRollData(); // Clean data before compiling
 
@@ -671,7 +669,7 @@ async function compileActorStatsToJournal(journalName = LT.journalTitle()) {
     DL("Hero Point Reroll Stats have been compiled into a journal entry.");
 }
 
-//function to retrieve the d20 face value from a rolls/rerolls
+// d20 face value from a roll/reroll message
 function getD20FaceValue(message) {
 
     // If xdy-workbench is set to "useHighestHeroPointRoll" and we captured RAW, prefer it
@@ -698,35 +696,6 @@ function getD20FaceValue(message) {
     return d20Face;
 }
 
-// function to retrieve the d20 face value from pf2e-toolbox target helper rolls/rerolls
-function getTBD20FaceValue(data) {
-    // If xdy-workbench is set to "useHighestHeroPointRoll" and we captured RAW, prefer it
-    try {
-		const modId = "xdy-pf2e-workbench";
-		if (game.modules.get(modId)?.active && game.settings?.settings?.has?.(`${modId}.heroPointRules`)) {
-			if (game.settings.get(modId, "heroPointRules") === "useHighestHeroPointRoll") {
-				// If caller passed a Roll as the 2nd param (kept/new), try to read our capture off it
-				const roll = arguments?.[1];
-				const raw = roll?.options?._wbRaw;
-				if (Number.isFinite(raw?.rawNewD20)) {
-					DL(`TB d20 face (pre-Workbench/useHighest via roll.options) = ${raw.rawNewD20}`);
-					return raw.rawNewD20;
-				}
-				// If Toolbelt handed explicit raw die in data, prefer it
-				if (Number.isFinite(data?.rawDie)) {
-					DL(`TB d20 face (pre-Workbench/useHighest via data.rawDie) = ${data.rawDie}`);
-					return data.rawDie;
-				}
-			}
-		}
-	} catch (e) {
-		// ignore and fall back
-	}
-
-    const d20Face = data?.die;
-    return d20Face;
-}
-        
 function _rsGetActiveD20(roll) {
     try {
         const d20 = roll?.dice?.find(d => d.faces === 20 && d.number === 1);
@@ -776,7 +745,7 @@ function _wbCaptureUseHighest(oldRoll, newRoll, _something, which) {
    {MACRO FUNCTIONS}
 ======================================================================= */
 
-// Function to display combined reroll stats for all actors
+// Combined reroll stats for all actors
 function macro_displayCombinedRerollStats() {
     // Aggregate stats
     let totalRerollCount = 0;
@@ -829,7 +798,7 @@ function macro_displayCombinedRerollStats() {
     DL("Combined reroll stats calculated and displayed.");
 }
 
-// Function to delete all roll data for a selected token's actor
+// Delete roll data for the selected token's actor
 async function macro_deleteActorRollData() {
     // Get the selected tokens
     const tokens = canvas.tokens.controlled;
@@ -879,7 +848,7 @@ async function macro_deleteActorRollData() {
 	}
 }
 
-// Function to delete all reroll data - optional to delete journal also
+// Delete all reroll data, optionally the journal too
 async function macro_deleteAllRerollStats(deleteJournal = false) {
 	
 	const confirmation = await showConfirmationDialog(LT.deleteAll());
@@ -905,7 +874,7 @@ async function macro_deleteAllRerollStats(deleteJournal = false) {
 	}
 }
 
-// Function to open screen to edit actor reroll data
+// Editor for an actor's reroll data
 async function macro_openRerollEditor() {
     
 	// Retrieve stored reroll data
@@ -1035,7 +1004,6 @@ async function macro_openRerollEditor() {
 
 					// If yes
                     if (confirmed) {
-                        // await game.settings.set(MODULE_NAME, "rollData", rollDataByActor);
 						await saveRollData();
 						await compileActorStatsToJournal();
                         ui.notifications.info(LT.notifications.saved());
@@ -1064,7 +1032,7 @@ async function macro_openRerollEditor() {
     dialog.render(true);
 }
 
-// Function to add a reroll result via dialog
+// Add a reroll result via dialog
 async function macro_addRerollResult() {
 	try {
 		// Selected token/actor checks
@@ -1171,7 +1139,7 @@ async function macro_addRerollResult() {
 	}
 }
 
-// Backup the current reroll stats to a JSON file (downloads in the browser)
+// Backup reroll stats to a JSON download
 async function macro_backupRerollData() {
 	// GM only 
 	if (!game.user.isGM) {
@@ -1215,7 +1183,7 @@ async function macro_backupRerollData() {
 		const filename = `${safeWorld}-reroll-backup-${ts}.json`;
 
 		// Foundry client helper triggers a browser download
-		saveDataToFile(json, "application/json", filename);
+		foundry.utils.saveDataToFile(json, "application/json", filename);
 
 		ui.notifications?.info(LT.macro.backupSaved());
 		DL(`macro_backupRerollData(): wrote ${filename}`, { bytes: json.length });
@@ -1225,7 +1193,7 @@ async function macro_backupRerollData() {
 	}
 }
 
-// Import reroll stats from a backup .json file 
+// Restore reroll stats from a backup .json file
 async function macro_restoreRerollData() {
 	// GM only
 	if (!game.user.isGM) {
@@ -1422,13 +1390,15 @@ Hooks.on("createChatMessage", async (message) => {
     // Check if it is a ReRoll
     if (context?.isReroll) {
         
-        // Get the reroll result and original roll to compare
-        // const rerollResult = message.rolls[0]?.total;
+        // Reroll result and original to compare
         const rerollResult = getD20FaceValue(message);
         const originalRoll = actorData.originalRoll;
         const hasOutcome = !!context?.outcome;
 
-        DL(`ReRoll detected | original: ${originalRoll} reroll: ${rerollResult} outcome:${hasOutcome}`);
+        // Secret / GM-blind check, used to optionally suppress chat output
+        const isSecret = message?.blind === true || context?.rollMode === CONST.DICE_ROLL_MODES.BLIND;
+
+        DL(`ReRoll detected | original: ${originalRoll} reroll: ${rerollResult} outcome:${hasOutcome} secret:${isSecret}`);
 
         // If outcome is missing (no DC prompt), we whisper a GM-only chooser and stop further auto-accounting
         
@@ -1465,7 +1435,7 @@ Hooks.on("createChatMessage", async (message) => {
             } else { // reroll is same
                  DL("Reroll is the same as original — prompting for same/worse.");
                 // Call Reroll handler for "same" immediately
-                await handleRerollEvent(actor, originalRoll, rerollResult, "same");
+                await handleRerollEvent(actor, originalRoll, rerollResult, "same", isSecret);
                 return; // Stop reroll handling
             }
 
@@ -1474,7 +1444,7 @@ Hooks.on("createChatMessage", async (message) => {
             await ChatMessage.create({
                 user: game.user.id,
                 content: promptHtml,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+                style: CONST.CHAT_MESSAGE_STYLES.OTHER,
                 whisper: gmRecipients,
                 speaker: { alias: LT.chat.speakerSingle() },
                 flags: {
@@ -1485,128 +1455,136 @@ Hooks.on("createChatMessage", async (message) => {
                 }
             });
 
-            // Stop normal reroll handling here — we’ll update stats on button click
+            // Stop here; stats update on button click
             return;
         } else {
             DL(`Reroll has outcome '${context.outcome}' — processing normally.`);
-            await handleRerollEvent(actor, originalRoll, rerollResult, context.outcome);
+            await handleRerollEvent(actor, originalRoll, rerollResult, context.outcome, isSecret);
         } 
 
     } else {
         DL("Original D20 roll detected (not a reroll).");
 		
-        // Save the original roll for this actor
-        //actorData.originalRoll = message.rolls[0]?.total; // Save total roll value
-        actorData.originalRoll = getD20FaceValue(message); // Save total roll value
+        // Store this actor's original d20 face
+        actorData.originalRoll = getD20FaceValue(message);
         DL(`Original roll saved for actor ${actorId}: ${actorData.originalRoll}`);
     }    
 });
 
-// Hook into pf2e-toolbelt targetHelper saves
-Hooks.on("pf2e-toolbelt.rollSave", async ({ roll, message, rollMessage, target, data }) => {
-  
+/* =======================================================================
+    {PF2E-TOOLBELT INTEGRATION}
+======================================================================= */
 
-	// GM only
-	if (!game.user.isGM) return;
+// Toolbelt rolls saves on the roller's client and only writes results to the
+// message flags; its rollSave/rerollSave hooks are local (Hooks.callAll), so
+// the GM never sees a player's own save. We watch updateChatMessage instead and
+// read flags[pf2e-toolbelt].targetHelper.saveVariants[variantId].saves[targetId].
 
-    DL("pf2e-toolbelt.rollSave() detected");
+// Last-seen save state per message+variant+target, to spot new rolls/rerolls
+const _tbSaveCache = new Map();
 
+// Resolve an actor from a toolbelt save target id (token id, falls back to actor id)
+function _tbResolveActor(targetId) {
 	try {
-		const actor = target?.actor ?? target?.document?.actor ?? null;
-		if (!actor) {
-			DL(2, "pf2e-toolbelt.rollSave(): could not resolve actor from target", { target });
-			return;
+		const tok = canvas?.tokens?.get?.(targetId);
+		if (tok?.actor) return tok.actor;
+		for (const scene of game.scenes ?? []) {
+			const td = scene.tokens?.get?.(targetId);
+			if (td?.actor) return td.actor;
 		}
-		if (!isValidActorForRerollTracking(actor)) {
-			DL(2, `pf2e-toolbelt.rollSave(): ignoring non-PC/minion actor ${actor.name}`);
-		 return;
-		}
-
-		//const rollTotal = Number(roll?.total ?? data?.value ?? 0);
-        const rollTotal = getTBD20FaceValue(data);
-		const actorId = actor.id;
-
-		if (!rollDataByActor[actorId]) {
-			rollDataByActor[actorId] = {
-				originalRoll: null,
-				rerollCount: 0,
-				betterCount: 0,
-				worseCount: 0,
-				sameCount: 0,
-				successCount: 0,
-				critSuccessCount: 0,
-				critFailCount: 0
-			};
-		}
-
-		rollDataByActor[actorId].originalRoll = rollTotal;
-		DL(`pf2e-toolbelt.rollSave(): original d20 detected for ${actor.name} => total ${rollTotal}`);
-
-		// Do NOT compile here; nothing changed in the stats yet
+		return game.actors?.get?.(targetId) ?? null;
 	} catch (err) {
-		DL(3, "pf2e-toolbelt.rollSave(): error", err);
+		DL(3, "_tbResolveActor(): error", err);
+		return null;
 	}
-});
+}
 
-// Hook into pf2e-toolbelt targetHelper rerolls
-Hooks.on("pf2e-toolbelt.rerollSave", async ({ oldRoll, newRoll, keptRoll, message, target, data }) => {
-	// GM only
+// Normalize a pf2e degree-of-success string to our internal outcome labels
+function _tbNormalizeOutcome(raw) {
+	const o = String(raw ?? "unknown").toLowerCase().replace(/\s+/g, "");
+	if (o === "criticalsuccess") return "criticalSuccess";
+	if (o === "criticalfailure") return "criticalFailure";
+	if (o === "success") return "success";
+	if (o === "failure") return "failure";
+	return "unknown";
+}
+
+// GM-side detection of toolbelt Target Helper saves and rerolls
+Hooks.on("updateChatMessage", async (message) => {
+	// Only the GM tracks rerolls
 	if (!game.user.isGM) return;
 
-    DL("Reroll detected!");
+	const variants = message?.flags?.["pf2e-toolbelt"]?.targetHelper?.saveVariants;
+	if (!variants || typeof variants !== "object") return;
 
 	try {
-		const actor = target?.actor ?? target?.document?.actor ?? null;
-		if (!actor) {
-			DL(2, "pf2e-toolbelt.rerollSave(): could not resolve actor from target", { target });
-			return;
+		for (const [variantId, variant] of Object.entries(variants)) {
+			const saves = variant?.saves;
+			if (!saves || typeof saves !== "object") continue;
+
+			for (const [targetId, save] of Object.entries(saves)) {
+				const die = Number(save?.die);
+				if (!Number.isFinite(die)) continue;
+
+				const isReroll = !!save?.rerolled;
+				const cacheKey = `${message.id}:${variantId}:${targetId}`;
+				const prev = _tbSaveCache.get(cacheKey);
+
+				// Unchanged since we last saw this target
+				if (prev && prev.die === die && prev.rerolled === isReroll) continue;
+
+				const actor = _tbResolveActor(targetId);
+				if (!actor || !isValidActorForRerollTracking(actor)) {
+					_tbSaveCache.set(cacheKey, { die, rerolled: isReroll });
+					continue;
+				}
+
+				if (!rollDataByActor[actor.id]) {
+					rollDataByActor[actor.id] = {
+						originalRoll: null,
+						rerollCount: 0,
+						betterCount: 0,
+						worseCount: 0,
+						sameCount: 0,
+						successCount: 0,
+						critSuccessCount: 0,
+						critFailCount: 0
+					};
+				}
+
+				if (!isReroll) {
+					// Initial save: store the d20 to compare a later reroll against
+					rollDataByActor[actor.id].originalRoll = die;
+					DL(`toolbelt save: original d20 for ${actor.name} => ${die}`);
+				} else {
+					// Reroll: compare kept die vs stored original
+					const originalTotal = rollDataByActor[actor.id].originalRoll ?? null;
+					if (originalTotal === null) {
+						DL(2, `toolbelt reroll for ${actor.name}: no stored original; cannot compare`);
+					} else {
+						const outcome = _tbNormalizeOutcome(save?.success ?? save?.unadjustedOutcome);
+						const isSecret = !!save?.private;
+						DL(`toolbelt reroll for ${actor.name} => kept ${die} vs original ${originalTotal} (${outcome}) secret:${isSecret}`);
+						await handleRerollEvent(actor, originalTotal, die, outcome, isSecret);
+					}
+				}
+
+				_tbSaveCache.set(cacheKey, { die, rerolled: isReroll });
+			}
 		}
-		if (!isValidActorForRerollTracking(actor)) {
-			DL(2, `pf2e-toolbelt.rerollSave(): ignoring non-PC/minion actor ${actor.name}`);
-			return;
-		}
-
-		// The kept result is the one we compare against the stored original
-		const kept = keptRoll ?? newRoll ?? null;
-		//const keptTotal = Number(kept?.total ?? data?.value ?? 0);
-        const keptTotal = getTBD20FaceValue(data);
-
-		// Normalize outcome if present
-		const rawOutcome = String(data?.success ?? data?.unadjustedOutcome ?? "unknown");
-        const outcome = (() => {
-            const o = rawOutcome.toLowerCase().replace(/\s+/g, "");
-            if (o === "criticalsuccess") return "criticalSuccess";
-            if (o === "criticalfailure") return "criticalFailure";
-            if (o === "success") return "success";
-            if (o === "failure") return "failure";
-            return "unknown";
-        })();
-        DL(`pf2e-toolbelt.rollSave(): outcome raw='${rawOutcome}' normalized='${outcome}'`);
-
-		const actorId = actor.id;
-		const originalTotal = rollDataByActor[actorId]?.originalRoll ?? null;
-		if (originalTotal === null) {
-			DL(2, `pf2e-toolbelt.rerollSave(): no original roll stored for ${actor.name}; cannot compare`);
-			return;
-		}
-
-		DL(`pf2e-toolbelt.rerollSave(): reroll for ${actor.name} => kept ${keptTotal} vs original ${originalTotal}`);
-
-		// Single place to update stats + output + compile
-		await handleRerollEvent(actor, originalTotal, keptTotal, outcome);
 	} catch (err) {
-		DL(3, "pf2e-toolbelt.rerollSave(): error", err);
+		DL(3, "updateChatMessage() toolbelt handler: error", err);
 	}
 });
 
 // Handle clicks on the no-outcome buttons in our special GM prompt
-Hooks.on("renderChatMessage", async (message, html, data) => {
+Hooks.on("renderChatMessageHTML", async (message, element) => {
 	// Only process if this is our reroll prompt
 	const isNoOutcome = message?.flags?.[MODULE_NAME]?.type === "noOutcomePrompt";
 	if (!isNoOutcome) return;
 
 	// Add one-time click handler to all .reroll-no-outcome-btn buttons
-	html.find(".reroll-no-outcome-btn").one("click", async (event) => {
+	element.querySelectorAll(".reroll-no-outcome-btn").forEach((el) => el.addEventListener("click", async (event) => {
 		try {
 			const btn = event.currentTarget;
 			const choice = btn.dataset.choice;
@@ -1643,10 +1621,10 @@ Hooks.on("renderChatMessage", async (message, html, data) => {
 			await message.delete();
 
 		} catch (err) {
-			console.error("PF2e ReRoll Stats | renderChatMessage failed", err);
+			console.error("PF2e ReRoll Stats | renderChatMessageHTML failed", err);
 			ui.notifications?.error("Error processing reroll choice.");
 		}
-	});
+	}, { once: true }));
 });
 
 // On ready, load existing roll data from settings
@@ -1755,7 +1733,17 @@ Hooks.once("init", () => {
         },
 		requiresReload: true
 	 });
-	
+
+	// Whisper stats to GM only when the reroll was for a secret (GM blind) check
+    game.settings.register(MODULE_NAME, "whisperSecretChat", {
+        name: LT.settings.whisperSecretChatName(),
+        hint: LT.settings.whisperSecretChatHint(),
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false
+	 });
+
 	// Register settings to ignore minions
     game.settings.register(MODULE_NAME, "ignoreMinion", {
         name: LT.settings.ignoreMinionName(),

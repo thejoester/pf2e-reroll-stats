@@ -12,6 +12,8 @@
             "rollDataHint": "Stores reroll tracking data for each actor.",
             "outputToChatName": "Output actor stats to chat after reroll?",
             "outputToChatHint": "Will output an actor's reroll stats in chat after each reroll.",
+            "whisperSecretChatName": "Whisper stats to GM for secret checks",
+            "whisperSecretChatHint": "When the reroll was for a secret (GM blind) check, whisper the actor's reroll stats to the GM instead of posting them publicly. Requires 'Output actor stats to chat' to be enabled.",
             "ignoreMinionName": "Ignore Minions",
             "ignoreMinionHint": "Ignore rolls from minions (companions, summons, etc).",
             "debugLevelName": "Debug Level",

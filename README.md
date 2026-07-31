@@ -6,9 +6,11 @@ A Module for FoundryVTT Pathfinder2e system that tracks stats for re-rolls.
 ### How To Use
 The module will automatically track re-rolls made by players and add them to a Journal entry in the base journal folder named "ReRoll Stats". 
 
+Saves rolled through the [PF2e Toolbelt](https://foundryvtt.com/packages/pf2e-toolbelt) Target Helper (the save buttons on a chat card) are tracked as well, including when a player rolls their own save.
+
 ![image](https://github.com/user-attachments/assets/6a8e408c-7173-4e46-8539-5424089b8060) 
 
-If enabled (default) in settings, outputs color coded message to chat
+If enabled in settings, outputs color coded message to chat. For secret (GM blind) checks, an optional setting whispers the stats to the GM instead of posting them publicly.
 
 <img width="205" height="438" alt="image" src="https://github.com/user-attachments/assets/44239794-5306-4de5-8d02-d22e42f7c91c" /> <img width="205" height="438" alt="image" src="https://github.com/user-attachments/assets/2a9617ce-0273-4d31-98be-57fe36efff4c" /> <img width="205" height="438" alt="image" src="https://github.com/user-attachments/assets/3e78d9c3-64e9-4b2d-bd67-93bed9a988c4" />
 
@@ -23,19 +25,19 @@ The following Macros are in the "ReRoll Stats Macros" Compendium:
 This Macro will compile all reroll stats for actors and create a journal entry named "Reroll tracker Stats" in the base Journal directory.
 
 Manual command:
-`compileActorStatsToJournal();`
+`pf2eRerollStats.compileActorStatsToJournal();`
 
 ### ReRoll Stats
 This Macro will display the selected token actor stats to the chat.
 
 Manual command:
-`displayActorStatsInChat();`
+`pf2eRerollStats.displayActorStatsInChat();`
 
 ### ReRoll Totals
 This Macro will display the re-roll total stats for all actors. 
 
 Manual command:
-`displayCombinedRerollStats();`
+`pf2eRerollStats.macro_displayCombinedRerollStats();`
 
 ### Reroll Editor
 This macro will open up a window that allows you to select an actor and edit the reroll data. (GM Only)
@@ -43,7 +45,7 @@ This macro will open up a window that allows you to select an actor and edit the
 ![reroll editor](https://i.ibb.co/DCW0hnQ/Reroll-Data.png)
 
 manual command:
-`openRerollEditor();`
+`pf2eRerollStats.macro_openRerollEditor();`
 
 ### Delete Selected ReRoll Data
 This macro will DELETE all re-roll data for selected token actor! If you want to just reset all stats to 0, then usee the Reset macro instead. 
@@ -51,7 +53,7 @@ This macro will DELETE all re-roll data for selected token actor! If you want to
 ***!!! CAN NOT BE UNDONE !!!***
 
 Manual command:
-`deleteActorRollData();`
+`pf2eRerollStats.macro_deleteActorRollData();`
 
 ### Delete ALL Reroll Stats
 
@@ -62,4 +64,4 @@ If you want to just reset all stats to 0, then usee the Reset macro instead.
 !!! CAN NOT BE UNDONE !!!
 
 Manual command: 
-`deleteAllRerollStats();`
+`pf2eRerollStats.macro_deleteAllRerollStats();`
